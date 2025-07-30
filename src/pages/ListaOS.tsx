@@ -192,13 +192,13 @@ export default function ListaOS() {
               </div>
             </div>
             
-            <Select value={filters.status || ""} onValueChange={(value) => handleFilterChange("status", value)}>
+            <Select value={filters.status || "all"} onValueChange={(value) => handleFilterChange("status", value === "all" ? undefined : value)}>
               <SelectTrigger className="w-full md:w-[180px]">
                 <Filter className="w-4 h-4 mr-2" />
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os status</SelectItem>
+                <SelectItem value="all">Todos os status</SelectItem>
                 <SelectItem value="rascunho">Rascunho</SelectItem>
                 <SelectItem value="aberta">Aberta</SelectItem>
                 <SelectItem value="em_andamento">Em Andamento</SelectItem>
