@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { useToast } = "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { apiClient } from "@/lib/api";
 import { NovaOSForm, Cliente, EquipamentoOS, ServicoOS, ProdutoOS, DespesaOS, formatCurrency } from "@/lib/types";
 import { Phone, User, Wrench, Package, Receipt, FileText, Save, CheckCircle, X } from "lucide-react";
