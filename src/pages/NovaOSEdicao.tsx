@@ -214,31 +214,58 @@ export default function NovaOSEdicao() {
   const saveOS = async (status: "rascunho" | "aberta") => {
     setSaving(true);
     try {
+      // Validar se há pelo menos um serviço ou produto
+      if (watchedData.servicos.length === 0 && watchedData.produtos.length === 0) {
+        toast({
+          title: "Validação",
+          description: "Adicione pelo menos um serviço ou produto",
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
+
+      // Validar forma de pagamento para status 'aberta'
+      if (status === "aberta" && !watchedData.forma_pagamento) {
+        toast({
+          title: "Validação",
+          description: "Forma de pagamento é obrigatória",
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
+
       const formData = getValues();
       const totals = calculateTotals();
 
       // First, create or update client
       let clienteId = formData.cliente.id;
       if (!clienteId) {
-        const clientResponse = await apiClient.createClient({
-          nome: formData.cliente.nome,
-          telefone: formData.cliente.telefone,
-          email: formData.cliente.email || null,
-        });
-        
-        if (clientResponse.ok) {
-          clienteId = clientResponse.data.id;
-        } else {
-          throw new Error(clientResponse.error?.message || "Erro ao criar cliente");
+        try {
+          const clientResponse = await apiClient.createClient({
+            nome: formData.cliente.nome,
+            telefone: formData.cliente.telefone,
+            email: formData.cliente.email || null,
+          });
+          
+          if (clientResponse.ok) {
+            clienteId = clientResponse.data.id;
+          } else {
+            throw new Error(clientResponse.error?.message || "Erro ao criar cliente");
+          }
+        } catch (error) {
+          console.error("Erro ao criar cliente:", error);
+          throw new Error("Erro ao criar cliente");
         }
       }
 
       const osData = {
         cliente_id: clienteId,
-        equipamento: formData.equipamento,
-        servicos: formData.servicos,
-        produtos: formData.produtos,
-        despesas: formData.despesas,
+        equipamento: formData.equipamento.tipo ? formData.equipamento : null,
+        servicos: formData.servicos.filter(s => s.nome_servico && s.valor_unitario > 0),
+        produtos: formData.produtos.filter(p => p.nome_produto && p.quantidade > 0 && p.valor_unitario > 0),
+        despesas: formData.despesas.filter(d => d.descricao && d.valor > 0),
         forma_pagamento: formData.forma_pagamento,
         garantia: formData.garantia || null,
         observacoes: formData.observacoes || null,
@@ -265,6 +292,7 @@ export default function NovaOSEdicao() {
         throw new Error(response.error?.message || "Erro ao salvar OS");
       }
     } catch (error) {
+      console.error("Erro ao salvar OS:", error);
       toast({
         title: "Erro",
         description: error instanceof Error ? error.message : "Erro ao salvar OS",

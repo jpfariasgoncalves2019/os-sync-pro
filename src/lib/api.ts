@@ -146,7 +146,109 @@ class ApiClient {
       data.cliente.telefone = this.normalizePhone(data.cliente.telefone);
     }
     
-    return this.request('/api-os', {
+    try {
+      const response = await this.request('/api-os', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...data,
+          usuario_id: getUserId(),
+        }),
+      });
+      
+      console.log('Create OS response:', response);
+      return response;
+    } catch (error) {
+      console.error('Error creating OS:', error);
+      return {
+        ok: false,
+        error: {
+          code: 'CREATE_ERROR',
+          message: 'Erro ao criar OS',
+        },
+      };
+    }
+  }
+
+  async updateOS(id: string, data: any): Promise<ApiResponse<any>> {
+    // Normalize phone numbers in client data
+    if (data.cliente && data.cliente.telefone) {
+      data.cliente.telefone = this.normalizePhone(data.cliente.telefone);
+    }
+    
+    try {
+      const response = await this.request(`/api-os/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          ...data,
+          usuario_id: getUserId(),
+        }),
+      });
+      
+      console.log('Update OS response:', response);
+      return response;
+    } catch (error) {
+      console.error('Error updating OS:', error);
+      return {
+        ok: false,
+        error: {
+          code: 'UPDATE_ERROR',
+          message: 'Erro ao atualizar OS',
+        },
+      };
+    }
+  }
+
+  async createClient(data: any): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.request('/api-clientes', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...data,
+          telefone: this.normalizePhone(data.telefone),
+        }),
+      });
+      
+      console.log('Create client response:', response);
+      return response;
+    } catch (error) {
+      console.error('Error creating client:', error);
+      return {
+        ok: false,
+        error: {
+          code: 'CREATE_CLIENT_ERROR',
+          message: 'Erro ao criar cliente',
+        },
+      };
+    }
+  }
+
+  // Helper to normalize phone to E.164
+  private normalizePhone(phone: string): string {
+    if (!phone) return '';
+    
+    // Remove all non-digits
+    const digits = phone.replace(/\D/g, '');
+    
+    // If starts with 55 (Brazil), format as +55
+    if (digits.startsWith('55') && digits.length >= 12) {
+      return `+${digits}`;
+    }
+    
+    // If doesn't start with country code, assume Brazil
+    if (digits.length >= 10) {
+      return `+55${digits}`;
+    }
+    
+    return `+55${digits}`;
+  }
+}
+
+// Export singleton instance
+export const apiClient = new ApiClient();
+
+// Export types and utilities
+export { getUserId, isOnline };
+export type { ApiResponse };
       method: 'POST',
       body: JSON.stringify({
         ...data,

@@ -87,13 +87,15 @@ export function MoneyInput({ label, value, onChange, placeholder, disabled }: Mo
     // Remove tudo exceto números, vírgulas e pontos
     inputValue = inputValue.replace(/[^\d,\.]/g, '');
     
-    // Substitui vírgula por ponto para processamento
-    inputValue = inputValue.replace(',', '.');
+    // Se tem vírgula, substitui por ponto para processamento
+    if (inputValue.includes(',')) {
+      inputValue = inputValue.replace(',', '.');
+    }
     
     // Verifica se é um número válido
     const numValue = parseFloat(inputValue);
     
-    if (isNaN(numValue)) {
+    if (isNaN(numValue) || inputValue === '') {
       onChange(0);
     } else {
       // Limita a 2 casas decimais
@@ -102,14 +104,26 @@ export function MoneyInput({ label, value, onChange, placeholder, disabled }: Mo
     }
   };
 
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    // Quando o campo perde o foco, formatar corretamente
-    const inputValue = e.target.value.replace(/[^\d,\.]/g, '').replace(',', '.');
-    const numValue = parseFloat(inputValue) || 0;
-    onChange(numValue);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Permite: backspace, delete, tab, escape, enter, home, end, left, right
+    if ([8, 9, 27, 13, 46, 35, 36, 37, 39].indexOf(e.keyCode) !== -1 ||
+        // Permite Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+        (e.keyCode === 65 && e.ctrlKey === true) ||
+        (e.keyCode === 67 && e.ctrlKey === true) ||
+        (e.keyCode === 86 && e.ctrlKey === true) ||
+        (e.keyCode === 88 && e.ctrlKey === true)) {
+      return;
+    }
+    
+    // Permite números, vírgula e ponto
+    if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && 
+        (e.keyCode < 96 || e.keyCode > 105) && 
+        e.keyCode !== 188 && e.keyCode !== 190) {
+      e.preventDefault();
+    }
   };
 
-  // Formatação para exibição: permite entrada direta
+  // Formatação para exibição
   const displayValue = value > 0 ? value.toFixed(2).replace('.', ',') : '';
 
   return (
@@ -123,7 +137,7 @@ export function MoneyInput({ label, value, onChange, placeholder, disabled }: Mo
           type="text"
           value={displayValue}
           onChange={handleChange}
-          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
           className="pl-10"
