@@ -82,12 +82,35 @@ interface MoneyInputProps {
 
 export function MoneyInput({ label, value, onChange, placeholder, disabled }: MoneyInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const stringValue = e.target.value.replace(/[^\d,]/g, '').replace(',', '.');
-    const numValue = parseFloat(stringValue) || 0;
+    let inputValue = e.target.value;
+    
+    // Remove tudo exceto números, vírgulas e pontos
+    inputValue = inputValue.replace(/[^\d,\.]/g, '');
+    
+    // Substitui vírgula por ponto para processamento
+    inputValue = inputValue.replace(',', '.');
+    
+    // Verifica se é um número válido
+    const numValue = parseFloat(inputValue);
+    
+    if (isNaN(numValue)) {
+      onChange(0);
+    } else {
+      // Limita a 2 casas decimais
+      const roundedValue = Math.round(numValue * 100) / 100;
+      onChange(roundedValue);
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Quando o campo perde o foco, formatar corretamente
+    const inputValue = e.target.value.replace(/[^\d,\.]/g, '').replace(',', '.');
+    const numValue = parseFloat(inputValue) || 0;
     onChange(numValue);
   };
 
-  const displayValue = value > 0 ? formatCurrency(value).replace('R$ ', '') : '';
+  // Formatação para exibição: permite entrada direta
+  const displayValue = value > 0 ? value.toFixed(2).replace('.', ',') : '';
 
   return (
     <div className="space-y-2">
@@ -100,6 +123,7 @@ export function MoneyInput({ label, value, onChange, placeholder, disabled }: Mo
           type="text"
           value={displayValue}
           onChange={handleChange}
+          onBlur={handleBlur}
           placeholder={placeholder}
           disabled={disabled}
           className="pl-10"

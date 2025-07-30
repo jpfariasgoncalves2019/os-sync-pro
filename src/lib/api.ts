@@ -141,9 +141,17 @@ class ApiClient {
 
   // OS endpoints
   async createOS(data: any): Promise<ApiResponse<any>> {
+    // Normalize phone numbers in client data
+    if (data.cliente && data.cliente.telefone) {
+      data.cliente.telefone = this.normalizePhone(data.cliente.telefone);
+    }
+    
     return this.request('/api-os', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        usuario_id: getUserId(),
+      }),
     });
   }
 
@@ -172,9 +180,17 @@ class ApiClient {
   }
 
   async updateOS(id: string, data: any): Promise<ApiResponse<any>> {
+    // Normalize phone numbers in client data
+    if (data.cliente && data.cliente.telefone) {
+      data.cliente.telefone = this.normalizePhone(data.cliente.telefone);
+    }
+    
     return this.request(`/api-os/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        usuario_id: getUserId(),
+      }),
     });
   }
 
@@ -198,7 +214,10 @@ class ApiClient {
   async createClient(data: any): Promise<ApiResponse<any>> {
     return this.request('/api-clientes', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        telefone: this.normalizePhone(data.telefone),
+      }),
     });
   }
 
@@ -226,7 +245,10 @@ class ApiClient {
   async updateClient(id: string, data: any): Promise<ApiResponse<any>> {
     return this.request(`/api-clientes/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        telefone: this.normalizePhone(data.telefone),
+      }),
     });
   }
 
@@ -254,6 +276,24 @@ class ApiClient {
         usuario_id: getUserId(),
       }),
     });
+  }
+
+  // Helper to normalize phone to E.164
+  private normalizePhone(phone: string): string {
+    // Remove all non-digits
+    const digits = phone.replace(/\D/g, '');
+    
+    // If starts with 55 (Brazil), format as +55
+    if (digits.startsWith('55') && digits.length >= 12) {
+      return `+${digits}`;
+    }
+    
+    // If doesn't start with country code, assume Brazil
+    if (digits.length >= 10) {
+      return `+55${digits}`;
+    }
+    
+    return `+55${digits}`;
   }
 }
 

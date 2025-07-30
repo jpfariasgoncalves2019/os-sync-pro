@@ -5,6 +5,8 @@ import Layout from "./components/Layout";
 import ListaOS from "./pages/ListaOS";
 import NovaOSEdicao from "./pages/NovaOSEdicao";
 import DetalheOS from "./pages/DetalheOS";
+import Clientes from "./pages/Clientes";
+import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,6 +21,8 @@ const App = () => (
             <Route path="nova-os" element={<NovaOSEdicao />} />
             <Route path="editar-os/:id" element={<NovaOSEdicao />} />
             <Route path="os/:id" element={<DetalheOS />} />
+            <Route path="clientes" element={<Clientes />} />
+            <Route path="configuracoes" element={<Configuracoes />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           </Route>
           <Route path="*" element={<NotFound />} />

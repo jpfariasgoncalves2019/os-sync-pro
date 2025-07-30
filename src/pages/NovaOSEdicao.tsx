@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } = "@/hooks/use-toast";
 import { apiClient } from "@/lib/api";
 import { NovaOSForm, Cliente, EquipamentoOS, ServicoOS, ProdutoOS, DespesaOS, formatCurrency } from "@/lib/types";
 import { Phone, User, Wrench, Package, Receipt, FileText, Save, CheckCircle, X } from "lucide-react";
@@ -22,7 +22,7 @@ const novaOSSchema = z.object({
   cliente: z.object({
     id: z.string().optional(),
     nome: z.string().min(1, "Nome é obrigatório"),
-    telefone: z.string().min(1, "Telefone é obrigatório").regex(/^\+\d{1,3}\d{8,14}$/, "Telefone deve estar no formato E.164"),
+    telefone: z.string().min(1, "Telefone é obrigatório"),
     email: z.string().email().optional().or(z.literal("")),
   }),
   equipamento: z.object({
@@ -110,19 +110,19 @@ export default function NovaOSEdicao() {
           // Populate form with OS data
           setValue("cliente", {
             id: os.cliente_id,
-            nome: os.cliente_nome || "",
-            telefone: os.cliente_telefone || "",
-            email: os.cliente_email || "",
+            nome: os.clientes?.nome || "",
+            telefone: os.clientes?.telefone || "",
+            email: os.clientes?.email || "",
           } as any);
           setValue("equipamento", {
-            tipo: os.equipamento?.tipo || "",
-            marca: os.equipamento?.marca || "",
-            modelo: os.equipamento?.modelo || "",
-            numero_serie: os.equipamento?.numero_serie || "",
+            tipo: os.equipamento_os?.tipo || "",
+            marca: os.equipamento_os?.marca || "",
+            modelo: os.equipamento_os?.modelo || "",
+            numero_serie: os.equipamento_os?.numero_serie || "",
           });
-          setValue("servicos", os.servicos || []);
-          setValue("produtos", os.produtos || []);
-          setValue("despesas", os.despesas || []);
+          setValue("servicos", os.servicos_os || []);
+          setValue("produtos", os.produtos_os || []);
+          setValue("despesas", os.despesas_os || []);
           setValue("forma_pagamento", os.forma_pagamento || "");
           setValue("garantia", os.garantia || "");
           setValue("observacoes", os.observacoes || "");
@@ -211,17 +211,40 @@ export default function NovaOSEdicao() {
     }
   };
 
-  const saveOS = async (status: "rascunho" | "concluida") => {
+  const saveOS = async (status: "rascunho" | "aberta") => {
     setSaving(true);
     try {
       const formData = getValues();
       const totals = calculateTotals();
 
+      // First, create or update client
+      let clienteId = formData.cliente.id;
+      if (!clienteId) {
+        const clientResponse = await apiClient.createClient({
+          nome: formData.cliente.nome,
+          telefone: formData.cliente.telefone,
+          email: formData.cliente.email || null,
+        });
+        
+        if (clientResponse.ok) {
+          clienteId = clientResponse.data.id;
+        } else {
+          throw new Error(clientResponse.error?.message || "Erro ao criar cliente");
+        }
+      }
+
       const osData = {
-        ...formData,
-        ...totals,
+        cliente_id: clienteId,
+        equipamento: formData.equipamento,
+        servicos: formData.servicos,
+        produtos: formData.produtos,
+        despesas: formData.despesas,
+        forma_pagamento: formData.forma_pagamento,
+        garantia: formData.garantia || null,
+        observacoes: formData.observacoes || null,
+        data: new Date().toISOString(),
         status,
-        data_criacao: new Date().toISOString(),
+        ...totals,
       };
 
       let response;
@@ -237,11 +260,7 @@ export default function NovaOSEdicao() {
           description: status === "rascunho" ? "OS salva como rascunho" : "OS criada com sucesso",
         });
 
-        if (status === "concluida") {
-          navigate(`/os/${response.data.id}`);
-        } else {
-          navigate("/");
-        }
+        navigate(`/os/${response.data.id}`);
       } else {
         throw new Error(response.error?.message || "Erro ao salvar OS");
       }
@@ -361,7 +380,7 @@ export default function NovaOSEdicao() {
                 render={({ field }) => (
                   <div className="space-y-2">
                     <Label>Telefone *</Label>
-                    <Input {...field} placeholder="+5511999999999" />
+                    <Input {...field} placeholder="(11) 99999-9999" />
                     {errors.cliente?.telefone && (
                       <p className="text-sm text-destructive">{errors.cliente.telefone.message}</p>
                     )}
@@ -733,12 +752,12 @@ export default function NovaOSEdicao() {
               </Button>
 
               <Button
-                onClick={() => saveOS("concluida")}
+                onClick={() => saveOS("aberta")}
                 disabled={saving || !watchedData.forma_pagamento || (watchedData.servicos.length === 0 && watchedData.produtos.length === 0)}
                 className="flex items-center gap-2"
               >
                 <CheckCircle className="w-4 h-4" />
-                {saving ? "Salvando..." : "Salvar e Concluir"}
+                {saving ? "Salvando..." : "Salvar e Finalizar"}
               </Button>
             </div>
           </div>
