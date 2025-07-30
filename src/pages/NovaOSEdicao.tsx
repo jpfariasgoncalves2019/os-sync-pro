@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiClient } from "@/lib/api";
 import { NovaOSForm, Cliente, EquipamentoOS, ServicoOS, ProdutoOS, DespesaOS, formatCurrency } from "@/lib/types";
+import { formatPhoneNumber, normalizePhoneNumber } from "@/lib/format";
 import { Phone, User, Wrench, Package, Receipt, FileText, Save, CheckCircle, X } from "lucide-react";
 
 const novaOSSchema = z.object({
@@ -408,7 +409,18 @@ export default function NovaOSEdicao() {
                 render={({ field }) => (
                   <div className="space-y-2">
                     <Label>Telefone *</Label>
-                    <Input {...field} placeholder="(11) 99999-9999" />
+                    <Input 
+                      {...field} 
+                      placeholder="(11) 99999-9999"
+                      onChange={(e) => {
+                        const formatted = formatPhoneNumber(e.target.value);
+                        field.onChange(formatted);
+                      }}
+                      onBlur={(e) => {
+                        const normalized = normalizePhoneNumber(e.target.value);
+                        field.onChange(normalized);
+                      }}
+                    />
                     {errors.cliente?.telefone && (
                       <p className="text-sm text-destructive">{errors.cliente.telefone.message}</p>
                     )}
