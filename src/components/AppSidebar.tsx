@@ -31,7 +31,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 
 const menuItems = [
-  { title: "Pedidos", url: "/", icon: FileText, isDefault: true },
+  { title: "Lista de OS", url: "/", icon: FileText, isDefault: true },
+  { title: "Nova OS", url: "/nova-os", icon: FileText },
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Produtos", url: "/produtos", icon: Package, placeholder: true },
   { title: "Serviços", url: "/servicos", icon: Wrench, placeholder: true },

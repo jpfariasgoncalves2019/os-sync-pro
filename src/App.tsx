@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import ListaOS from "./pages/ListaOS";
+import NovaOSEdicao from "./pages/NovaOSEdicao";
+import DetalheOS from "./pages/DetalheOS";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -14,6 +16,9 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<ListaOS />} />
+            <Route path="nova-os" element={<NovaOSEdicao />} />
+            <Route path="editar-os/:id" element={<NovaOSEdicao />} />
+            <Route path="os/:id" element={<DetalheOS />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           </Route>
           <Route path="*" element={<NotFound />} />

@@ -14,6 +14,7 @@ export interface OrdemServico {
   os_numero_humano: string;
   cliente_id: string;
   data: string;
+  data_criacao?: string;
   status: 'rascunho' | 'aberta' | 'em_andamento' | 'concluida' | 'cancelada';
   forma_pagamento: string;
   garantia?: string;
@@ -26,6 +27,15 @@ export interface OrdemServico {
   deleted_at?: string;
   created_at: string;
   updated_at: string;
+  
+  // Extended display fields
+  cliente_nome?: string;
+  cliente_telefone?: string;
+  cliente_email?: string;
+  equipamento?: EquipamentoOS;
+  servicos?: ServicoOS[];
+  produtos?: ProdutoOS[];
+  despesas?: DespesaOS[];
   
   // Relations
   clientes?: Cliente;
