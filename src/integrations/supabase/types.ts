@@ -14,7 +14,327 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clientes: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          importado_da_agenda: boolean | null
+          nome: string
+          telefone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          importado_da_agenda?: boolean | null
+          nome: string
+          telefone: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          importado_da_agenda?: boolean | null
+          nome?: string
+          telefone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      configuracoes_usuario: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          endereco: string | null
+          id: string
+          logo_empresa: string | null
+          nome_fantasia: string
+          openai_key_status: boolean | null
+          telefone: string | null
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          endereco?: string | null
+          id?: string
+          logo_empresa?: string | null
+          nome_fantasia: string
+          openai_key_status?: boolean | null
+          telefone?: string | null
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          endereco?: string | null
+          id?: string
+          logo_empresa?: string | null
+          nome_fantasia?: string
+          openai_key_status?: boolean | null
+          telefone?: string | null
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
+      despesas_os: {
+        Row: {
+          created_at: string
+          descricao: string
+          id: string
+          ordem_servico_id: string
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          id?: string
+          ordem_servico_id: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          id?: string
+          ordem_servico_id?: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "despesas_os_ordem_servico_id_fkey"
+            columns: ["ordem_servico_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipamento_os: {
+        Row: {
+          created_at: string
+          id: string
+          marca: string | null
+          modelo: string | null
+          numero_serie: string | null
+          ordem_servico_id: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          marca?: string | null
+          modelo?: string | null
+          numero_serie?: string | null
+          ordem_servico_id: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          marca?: string | null
+          modelo?: string | null
+          numero_serie?: string | null
+          ordem_servico_id?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipamento_os_ordem_servico_id_fkey"
+            columns: ["ordem_servico_id"]
+            isOneToOne: true
+            referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fotos_os: {
+        Row: {
+          caminho_imagem: string
+          created_at: string
+          id: string
+          ordem_servico_id: string
+          updated_at: string
+        }
+        Insert: {
+          caminho_imagem: string
+          created_at?: string
+          id?: string
+          ordem_servico_id: string
+          updated_at?: string
+        }
+        Update: {
+          caminho_imagem?: string
+          created_at?: string
+          id?: string
+          ordem_servico_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fotos_os_ordem_servico_id_fkey"
+            columns: ["ordem_servico_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ordens_servico: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          data: string
+          deleted_at: string | null
+          forma_pagamento: string
+          garantia: string | null
+          id: string
+          observacoes: string | null
+          os_numero_humano: string
+          status: string | null
+          sync_status: string | null
+          total_despesas: number | null
+          total_geral: number | null
+          total_produtos: number | null
+          total_servicos: number | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          data: string
+          deleted_at?: string | null
+          forma_pagamento: string
+          garantia?: string | null
+          id?: string
+          observacoes?: string | null
+          os_numero_humano: string
+          status?: string | null
+          sync_status?: string | null
+          total_despesas?: number | null
+          total_geral?: number | null
+          total_produtos?: number | null
+          total_servicos?: number | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          data?: string
+          deleted_at?: string | null
+          forma_pagamento?: string
+          garantia?: string | null
+          id?: string
+          observacoes?: string | null
+          os_numero_humano?: string
+          status?: string | null
+          sync_status?: string | null
+          total_despesas?: number | null
+          total_geral?: number | null
+          total_produtos?: number | null
+          total_servicos?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordens_servico_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produtos_os: {
+        Row: {
+          created_at: string
+          id: string
+          nome_produto: string
+          ordem_servico_id: string
+          quantidade: number | null
+          updated_at: string
+          valor_total: number | null
+          valor_unitario: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome_produto: string
+          ordem_servico_id: string
+          quantidade?: number | null
+          updated_at?: string
+          valor_total?: number | null
+          valor_unitario?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome_produto?: string
+          ordem_servico_id?: string
+          quantidade?: number | null
+          updated_at?: string
+          valor_total?: number | null
+          valor_unitario?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produtos_os_ordem_servico_id_fkey"
+            columns: ["ordem_servico_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      servicos_os: {
+        Row: {
+          created_at: string
+          id: string
+          nome_servico: string
+          ordem_servico_id: string
+          updated_at: string
+          valor_total: number | null
+          valor_unitario: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome_servico: string
+          ordem_servico_id: string
+          updated_at?: string
+          valor_total?: number | null
+          valor_unitario?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome_servico?: string
+          ordem_servico_id?: string
+          updated_at?: string
+          valor_total?: number | null
+          valor_unitario?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servicos_os_ordem_servico_id_fkey"
+            columns: ["ordem_servico_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
