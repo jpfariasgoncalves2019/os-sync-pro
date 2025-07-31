@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiClient } from "@/lib/api";
 import { OrdemServico, formatCurrency, formatDateTime, STATUS_CONFIG } from "@/lib/types";
-import { generateOSPDF } from "@/lib/pdf-generator";
+import { generateOSPDF, EmpresaConfig } from "@/lib/pdf-generator";
+import { useUserToken } from "@/hooks/use-user-token";
 import { shareViaWhatsApp } from "@/lib/whatsapp-share";
 import { 
   ArrowLeft, 
@@ -34,6 +35,25 @@ export default function DetalheOS() {
   const [os, setOS] = useState<OrdemServico | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [empresaConfig, setEmpresaConfig] = useState<EmpresaConfig | null>(null);
+  const userToken = useUserToken();
+  // Buscar dados da empresa ao carregar a OS e o token
+  useEffect(() => {
+    const fetchEmpresa = async () => {
+      if (!userToken) return;
+      const response = await apiClient.getEmpresaConfig(userToken);
+      if (response.ok && response.data) {
+        setEmpresaConfig({
+          nome_fantasia: response.data.nome_fantasia || "",
+          cnpj: response.data.cnpj || "",
+          telefone: response.data.telefone || "",
+          endereco: response.data.endereco || "",
+          logo_empresa: response.data.logo_empresa || null,
+        });
+      }
+    };
+    fetchEmpresa();
+  }, [userToken]);
 
   useEffect(() => {
     const loadOS = async () => {
@@ -99,16 +119,13 @@ export default function DetalheOS() {
 
   const handleGeneratePDF = async () => {
     if (!os) return;
-
     setGenerating(true);
     try {
-      const pdfBlob = await generateOSPDF(os);
+      const pdfBlob = await generateOSPDF(os, empresaConfig || undefined);
       const fileName = `OS-${os.os_numero_humano}.pdf`;
-      
       // Try to share via WhatsApp first
       const clientPhone = os.clientes?.telefone || "";
       const shared = await shareViaWhatsApp(pdfBlob, fileName, clientPhone);
-      
       if (!shared) {
         // Fallback: Download PDF
         const url = URL.createObjectURL(pdfBlob);
@@ -119,7 +136,6 @@ export default function DetalheOS() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        
         toast({
           title: "PDF Gerado",
           description: "PDF salvo. Você pode compartilhar quando quiser.",

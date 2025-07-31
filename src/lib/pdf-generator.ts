@@ -9,35 +9,102 @@ declare module "jspdf" {
   }
 }
 
-export async function generateOSPDF(os: OrdemServico): Promise<Blob> {
+
+export interface EmpresaConfig {
+  nome_fantasia: string;
+  cnpj?: string;
+  telefone?: string;
+  endereco?: string;
+  logo_empresa?: string | null;
+}
+
+
+export async function generateOSPDF(
+  os: OrdemServico,
+  empresa?: EmpresaConfig
+): Promise<Blob> {
   const doc = new jsPDF({
     orientation: "portrait",
     unit: "mm",
     format: "a4",
   });
 
-  // Margins (20mm)
+  // Margens
   const margin = 20;
   const pageWidth = 210; // A4 width
-  const contentWidth = pageWidth - (margin * 2);
+  const contentWidth = pageWidth - margin * 2;
   let currentY = margin;
 
   // Set font
   doc.setFont("helvetica");
 
+  // Header - Logo da Empresa (se houver)
+  if (empresa?.logo_empresa) {
+    try {
+      // Baixa a imagem e converte para base64
+      const response = await fetch(empresa.logo_empresa);
+      const blob = await response.blob();
+      const reader = new FileReader();
+      const base64: string = await new Promise((resolve, reject) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      // Adiciona a imagem (logo) no topo
+      // Ajusta tamanho máximo (ex: 40mm largura, 20mm altura)
+      const imgProps = doc.getImageProperties(base64);
+      const maxWidth = 40;
+      const maxHeight = 20;
+      let imgWidth = imgProps.width;
+      let imgHeight = imgProps.height;
+      // Redimensiona mantendo proporção
+      if (imgWidth > maxWidth) {
+        imgHeight = (imgHeight * maxWidth) / imgWidth;
+        imgWidth = maxWidth;
+      }
+      if (imgHeight > maxHeight) {
+        imgWidth = (imgWidth * maxHeight) / imgHeight;
+        imgHeight = maxHeight;
+      }
+      // Centraliza horizontalmente
+      const x = margin + (contentWidth - imgWidth) / 2;
+      doc.addImage(base64, "PNG", x, currentY, imgWidth, imgHeight);
+      currentY += imgHeight + 4;
+    } catch (e) {
+      // Se falhar, ignora a logo
+      currentY += 4;
+    }
+  }
+
   // Header - Company Info
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text("OS Sync Pro", margin, currentY);
+  doc.text(
+    empresa?.nome_fantasia || "Nome da Empresa",
+    margin,
+    currentY
+  );
 
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   currentY += 6;
-  doc.text("CNPJ: 00.000.000/0001-00", margin, currentY);
+  doc.text(
+    `CNPJ: ${empresa?.cnpj || "00.000.000/0001-00"}`,
+    margin,
+    currentY
+  );
   currentY += 4;
-  doc.text("Telefone: (11) 99999-9999", margin, currentY);
+  doc.text(
+    `Telefone: ${empresa?.telefone || "(11) 99999-9999"}`,
+    margin,
+    currentY
+  );
   currentY += 4;
-  doc.text("Endereço: Rua Exemplo, 123 - São Paulo/SP", margin, currentY);
+  doc.text(
+    `Endereço: ${empresa?.endereco || "Rua Exemplo, 123 - São Paulo/SP"}`,
+    margin,
+    currentY
+  );
 
   // OS Number and Date
   currentY += 15;

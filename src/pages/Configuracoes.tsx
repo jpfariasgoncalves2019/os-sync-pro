@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,18 @@ export default function Configuracoes() {
     endereco: "",
     logo_empresa: null as string | null,
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  // Preview da logo ao selecionar arquivo
+  useEffect(() => {
+    if (logoFile) {
+      const url = URL.createObjectURL(logoFile);
+      setLogoPreview(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setLogoPreview(null);
+    }
+  }, [logoFile]);
   const userToken = useUserToken();
   
   const [apiKey, setApiKey] = useState("");
@@ -83,13 +96,25 @@ export default function Configuracoes() {
       return;
     }
     setLoading(true);
+    let logoUrl = empresaData.logo_empresa;
     try {
-      const response = await apiClient.saveEmpresaConfig(empresaData, userToken);
+      // Upload da logo se houver novo arquivo
+      if (logoFile) {
+        const ext = logoFile.name.split('.').pop();
+        const fileName = `logo_${Date.now()}.${ext}`;
+        const { data, error } = await supabase.storage.from('logos').upload(fileName, logoFile, { upsert: true });
+        if (error) throw error;
+        const { data: publicUrl } = supabase.storage.from('logos').getPublicUrl(fileName);
+        logoUrl = publicUrl.publicUrl;
+      }
+      const response = await apiClient.saveEmpresaConfig({ ...empresaData, logo_empresa: logoUrl }, userToken);
       if (response.ok) {
         toast({
           title: "Configurações salvas",
           description: "As configurações da empresa foram atualizadas.",
         });
+        setEmpresaData((prev) => ({ ...prev, logo_empresa: logoUrl }));
+        setLogoFile(null);
       } else {
         toast({
           title: "Erro",
@@ -209,6 +234,20 @@ export default function Configuracoes() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
+            {/* Upload da Logo */}
+            <div className="space-y-2 md:col-span-2">
+              <Label>Logo da Empresa</Label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={e => setLogoFile(e.target.files?.[0] || null)}
+              />
+              {logoPreview ? (
+                <img src={logoPreview} alt="Preview da Logo" className="h-16 mt-2" />
+              ) : empresaData.logo_empresa ? (
+                <img src={empresaData.logo_empresa} alt="Logo atual" className="h-16 mt-2" />
+              ) : null}
+            </div>
             <div className="space-y-2">
               <Label>Nome Fantasia *</Label>
               <Input

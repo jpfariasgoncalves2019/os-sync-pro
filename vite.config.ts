@@ -4,8 +4,10 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
+// Ajuste para garantir que os assets sejam servidos corretamente na raiz em produção (Netlify)
+// Justificativa: Netlify serve o app na raiz, então o base deve ser '/' para evitar erros 404 de assets.
 export default defineConfig(({ mode }) => ({
-  base: '/os-sync-pro/',
+  base: '/',
   server: {
     host: "::",
     port: 8080,
