@@ -42,8 +42,8 @@ export default function Configuracoes() {
 
   const testExistingKey = async () => {
     try {
-      const response = await apiClient.testOpenAIKey();
-      if (response.ok) {
+      const response = await apiClient.get<{openai_key_ok: boolean}>('/user-openai-key');
+      if (response.ok && response.data) {
         setOpenAIKeyStatus(response.data.openai_key_ok);
       }
     } catch (error) {
@@ -124,10 +124,10 @@ export default function Configuracoes() {
   const handleTestApiKey = async () => {
     setTestingKey(true);
     try {
-      const response = await apiClient.testOpenAIKey();
+      const response = await apiClient.testOpenAIKey(apiKey);
       
-      if (response.ok) {
-        const isValid = response.data.openai_key_ok;
+      if (response.ok && response.data) {
+        const isValid = (response.data as {openai_key_ok: boolean}).openai_key_ok;
         setOpenAIKeyStatus(isValid);
         
         toast({
