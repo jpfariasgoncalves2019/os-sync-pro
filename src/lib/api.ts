@@ -65,41 +65,41 @@ class ApiClient {
   // Métodos específicos para OS
   async listOS(filters?: any): Promise<ApiResponse<any>> {
     const queryString = filters ? new URLSearchParams(filters).toString() : '';
-    return this.get(`-os${queryString ? `?${queryString}` : ''}`);
+    return this.get(`/api-os${queryString ? `?${queryString}` : ''}`);
   }
 
   async getOS(id: string): Promise<ApiResponse<any>> {
-    return this.get(`-os/${id}`);
+    return this.get(`/api-os/${id}`);
   }
 
   async createOS(data: any): Promise<ApiResponse<any>> {
-    return this.post('-os', data);
+    return this.post('/api-os', data);
   }
 
   async updateOS(id: string, data: any): Promise<ApiResponse<any>> {
-    return this.put(`-os/${id}`, data);
+    return this.put(`/api-os/${id}`, data);
   }
 
   async deleteOS(id: string): Promise<ApiResponse<any>> {
-    return this.delete(`-os/${id}`);
+    return this.delete(`/api-os/${id}`);
   }
 
   // Métodos específicos para Clientes
   async listClients(filters?: any): Promise<ApiResponse<any>> {
     const queryString = filters ? new URLSearchParams(filters).toString() : '';
-    return this.get(`-clientes${queryString ? `?${queryString}` : ''}`);
+    return this.get(`/api-clientes${queryString ? `?${queryString}` : ''}`);
   }
 
   async createClient(data: any): Promise<ApiResponse<any>> {
-    return this.post('-clientes', data);
+    return this.post('/api-clientes', data);
   }
 
   async updateClient(id: string, data: any): Promise<ApiResponse<any>> {
-    return this.put(`-clientes/${id}`, data);
+    return this.put(`/api-clientes/${id}`, data);
   }
 
   async deleteClient(id: string): Promise<ApiResponse<any>> {
-    return this.delete(`-clientes/${id}`);
+    return this.delete(`/api-clientes/${id}`);
   }
 
   // Métodos para OpenAI

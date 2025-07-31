@@ -141,6 +141,8 @@ export function MoneyInput({ label, value, onChange, placeholder, disabled }: Mo
           placeholder={placeholder}
           disabled={disabled}
           className="pl-10"
+          min="0"
+          step="0.01"
         />
       </div>
     </div>

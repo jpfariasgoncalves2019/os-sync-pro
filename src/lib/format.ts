@@ -20,9 +20,21 @@ export function normalizePhoneNumber(value: string) {
   // Remove todos os caracteres não numéricos
   const cleaned = value.replace(/\D/g, '');
   
-  // Adiciona o código do país (+55) se não existir
-  if (cleaned.length === 11 && !cleaned.startsWith('55')) {
+  // Converte para formato E.164 (+55XXXXXXXXXXX)
+  if (cleaned.length === 10) {
+    // Adiciona 9 para celular e código do país
+    return `+55${cleaned.slice(0, 2)}9${cleaned.slice(2)}`;
+  } else if (cleaned.length === 11) {
+    // Adiciona apenas código do país
     return `+55${cleaned}`;
+  } else if (cleaned.length === 13 && cleaned.startsWith('55')) {
+    // Já tem código do país, adiciona apenas +
+    return `+${cleaned}`;
   }
-  return cleaned;
+  return value;
+}
+
+export function validatePhoneE164(phone: string): boolean {
+  const e164Regex = /^\+[1-9]\d{1,14}$/;
+  return e164Regex.test(phone);
 }

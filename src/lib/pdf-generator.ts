@@ -48,7 +48,7 @@ export async function generateOSPDF(os: OrdemServico): Promise<Blob> {
   currentY += 10;
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text(`Data: ${formatDate(os.data_criacao || os.data)}`, margin, currentY);
+  doc.text(`Data: ${formatDate(os.created_at || os.data)}`, margin, currentY);
   doc.text(`Status: ${os.status}`, pageWidth - margin - 30, currentY);
 
   // Client Section
@@ -60,30 +60,30 @@ export async function generateOSPDF(os: OrdemServico): Promise<Blob> {
   currentY += 8;
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text(`Nome: ${os.cliente_nome}`, margin, currentY);
+  doc.text(`Nome: ${os.clientes?.nome || "Nome não informado"}`, margin, currentY);
   
-  if (os.cliente_telefone) {
+  if (os.clientes?.telefone) {
     currentY += 5;
-    doc.text(`Telefone: ${os.cliente_telefone}`, margin, currentY);
+    doc.text(`Telefone: ${os.clientes.telefone}`, margin, currentY);
   }
   
-  if (os.cliente_email) {
+  if (os.clientes?.email) {
     currentY += 5;
-    doc.text(`Email: ${os.cliente_email}`, margin, currentY);
+    doc.text(`Email: ${os.clientes.email}`, margin, currentY);
   }
 
   // Equipment Section
-  if (os.equipamento) {
+  if (os.equipamento_os) {
     currentY += 15;
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.text("EQUIPAMENTO", margin, currentY);
 
     const equipmentData = [];
-    if (os.equipamento.tipo) equipmentData.push(["Tipo", os.equipamento.tipo]);
-    if (os.equipamento.marca) equipmentData.push(["Marca", os.equipamento.marca]);
-    if (os.equipamento.modelo) equipmentData.push(["Modelo", os.equipamento.modelo]);
-    if (os.equipamento.numero_serie) equipmentData.push(["Nº Série", os.equipamento.numero_serie]);
+    if (os.equipamento_os.tipo) equipmentData.push(["Tipo", os.equipamento_os.tipo]);
+    if (os.equipamento_os.marca) equipmentData.push(["Marca", os.equipamento_os.marca]);
+    if (os.equipamento_os.modelo) equipmentData.push(["Modelo", os.equipamento_os.modelo]);
+    if (os.equipamento_os.numero_serie) equipmentData.push(["Nº Série", os.equipamento_os.numero_serie]);
 
     currentY += 5;
     doc.autoTable({
@@ -106,8 +106,8 @@ export async function generateOSPDF(os: OrdemServico): Promise<Blob> {
   const itemsData = [];
   
   // Add services
-  if (os.servicos && os.servicos.length > 0) {
-    os.servicos.forEach((servico) => {
+  if (os.servicos_os && os.servicos_os.length > 0) {
+    os.servicos_os.forEach((servico) => {
       itemsData.push([
         `${servico.nome_servico} (Serviço)`,
         "1",
@@ -118,8 +118,8 @@ export async function generateOSPDF(os: OrdemServico): Promise<Blob> {
   }
 
   // Add products
-  if (os.produtos && os.produtos.length > 0) {
-    os.produtos.forEach((produto) => {
+  if (os.produtos_os && os.produtos_os.length > 0) {
+    os.produtos_os.forEach((produto) => {
       itemsData.push([
         `${produto.nome_produto} (Produto)`,
         produto.quantidade.toString(),
@@ -155,13 +155,13 @@ export async function generateOSPDF(os: OrdemServico): Promise<Blob> {
   }
 
   // Expenses
-  if (os.despesas && os.despesas.length > 0) {
+  if (os.despesas_os && os.despesas_os.length > 0) {
     currentY += 10;
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.text("DESPESAS", margin, currentY);
 
-    const despesasData = os.despesas.map((despesa) => [
+    const despesasData = os.despesas_os.map((despesa) => [
       despesa.descricao,
       formatCurrency(despesa.valor),
     ]);

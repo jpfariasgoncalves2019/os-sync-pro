@@ -16,15 +16,20 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiClient } from "@/lib/api";
 import { NovaOSForm, Cliente, EquipamentoOS, ServicoOS, ProdutoOS, DespesaOS, formatCurrency } from "@/lib/types";
-import { formatPhoneNumber, normalizePhoneNumber } from "@/lib/format";
+import { formatPhoneNumber, normalizePhoneNumber, validatePhoneE164 } from "@/lib/format";
 import { Phone, User, Wrench, Package, Receipt, FileText, Save, CheckCircle, X } from "lucide-react";
 
 const novaOSSchema = z.object({
   cliente: z.object({
     id: z.string().optional(),
     nome: z.string().min(1, "Nome é obrigatório"),
-    telefone: z.string().min(1, "Telefone é obrigatório"),
-    email: z.string().email().optional().or(z.literal("")),
+    telefone: z.string()
+      .min(1, "Telefone é obrigatório")
+      .refine((val) => {
+        const normalized = normalizePhoneNumber(val);
+        return validatePhoneE164(normalized);
+      }, "Informe um telefone válido com DDD"),
+    email: z.string().email("Email inválido").optional().or(z.literal("")),
   }),
   equipamento: z.object({
     tipo: z.string().min(1, "Tipo é obrigatório"),
@@ -34,18 +39,18 @@ const novaOSSchema = z.object({
   }),
   servicos: z.array(z.object({
     nome_servico: z.string().min(1, "Nome do serviço é obrigatório"),
-    valor_unitario: z.number().min(0, "Valor deve ser positivo"),
-    valor_total: z.number().min(0, "Valor total deve ser positivo"),
+    valor_unitario: z.number().min(0.01, "Valor deve ser maior que zero"),
+    valor_total: z.number().min(0.01, "Valor total deve ser maior que zero"),
   })),
   produtos: z.array(z.object({
     nome_produto: z.string().min(1, "Nome do produto é obrigatório"),
     quantidade: z.number().min(1, "Quantidade deve ser maior que zero"),
-    valor_unitario: z.number().min(0, "Valor unitário deve ser positivo"),
-    valor_total: z.number().min(0, "Valor total deve ser positivo"),
+    valor_unitario: z.number().min(0.01, "Valor unitário deve ser maior que zero"),
+    valor_total: z.number().min(0.01, "Valor total deve ser maior que zero"),
   })),
   despesas: z.array(z.object({
     descricao: z.string().min(1, "Descrição é obrigatória"),
-    valor: z.number().min(0, "Valor deve ser positivo"),
+    valor: z.number().min(0.01, "Valor deve ser maior que zero"),
   })),
   forma_pagamento: z.string().min(1, "Forma de pagamento é obrigatória"),
   garantia: z.string().optional(),
@@ -98,9 +103,32 @@ export default function NovaOSEdicao() {
     loadClientes();
   }, []);
 
-  // Load OS data for editing
+  // Load OS data for editing or duplicating
   useEffect(() => {
     const loadOS = async () => {
+      if (isDuplicating && location.state?.duplicateFrom) {
+        const os = location.state.duplicateFrom;
+        setValue("cliente", {
+          id: os.cliente_id,
+          nome: os.cliente_nome || "",
+          telefone: os.cliente_telefone || "",
+          email: os.cliente_email || "",
+        } as any);
+        setValue("equipamento", {
+          tipo: os.equipamento?.tipo || "",
+          marca: os.equipamento?.marca || "",
+          modelo: os.equipamento?.modelo || "",
+          numero_serie: os.equipamento?.numero_serie || "",
+        });
+        setValue("servicos", os.servicos || []);
+        setValue("produtos", os.produtos || []);
+        setValue("despesas", os.despesas || []);
+        setValue("forma_pagamento", os.forma_pagamento || "");
+        setValue("garantia", os.garantia || "");
+        setValue("observacoes", os.observacoes || "");
+        return;
+      }
+
       if (!isEditing || !id) return;
       
       setLoading(true);
@@ -108,22 +136,21 @@ export default function NovaOSEdicao() {
         const response = await apiClient.getOS(id);
         if (response.ok) {
           const os = response.data;
-          // Populate form with OS data
           setValue("cliente", {
             id: os.cliente_id,
-            nome: os.clientes?.nome || "",
-            telefone: os.clientes?.telefone || "",
-            email: os.clientes?.email || "",
+            nome: os.cliente_nome || "",
+            telefone: os.cliente_telefone || "",
+            email: os.cliente_email || "",
           } as any);
           setValue("equipamento", {
-            tipo: os.equipamento_os?.tipo || "",
-            marca: os.equipamento_os?.marca || "",
-            modelo: os.equipamento_os?.modelo || "",
-            numero_serie: os.equipamento_os?.numero_serie || "",
+            tipo: os.equipamento?.tipo || "",
+            marca: os.equipamento?.marca || "",
+            modelo: os.equipamento?.modelo || "",
+            numero_serie: os.equipamento?.numero_serie || "",
           });
-          setValue("servicos", os.servicos_os || []);
-          setValue("produtos", os.produtos_os || []);
-          setValue("despesas", os.despesas_os || []);
+          setValue("servicos", os.servicos || []);
+          setValue("produtos", os.produtos || []);
+          setValue("despesas", os.despesas || []);
           setValue("forma_pagamento", os.forma_pagamento || "");
           setValue("garantia", os.garantia || "");
           setValue("observacoes", os.observacoes || "");
@@ -140,7 +167,7 @@ export default function NovaOSEdicao() {
     };
 
     loadOS();
-  }, [id, isEditing, setValue, toast]);
+  }, [id, isEditing, isDuplicating, location.state, setValue, toast]);
 
   // Calculate totals
   const calculateTotals = () => {

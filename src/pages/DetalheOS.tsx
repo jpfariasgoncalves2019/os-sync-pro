@@ -106,7 +106,8 @@ export default function DetalheOS() {
       const fileName = `OS-${os.os_numero_humano}.pdf`;
       
       // Try to share via WhatsApp first
-      const shared = await shareViaWhatsApp(pdfBlob, fileName, os.cliente_telefone);
+      const clientPhone = os.clientes?.telefone || "";
+      const shared = await shareViaWhatsApp(pdfBlob, fileName, clientPhone);
       
       if (!shared) {
         // Fallback: Download PDF
@@ -139,7 +140,9 @@ export default function DetalheOS() {
     if (!os) return;
     
     try {
-      await shareViaWhatsApp(null, "", os.cliente_telefone, `Olá ${os.cliente_nome}, sua OS ${os.os_numero_humano} está pronta!`);
+      const clientPhone = os.clientes?.telefone || "";
+      const clientName = os.clientes?.nome || "Cliente";
+      await shareViaWhatsApp(null, "", clientPhone, `Olá ${clientName}, sua OS ${os.os_numero_humano} está pronta!`);
     } catch (error) {
       toast({
         title: "Erro",
@@ -229,17 +232,17 @@ export default function DetalheOS() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <p className="font-medium">{os.cliente_nome}</p>
-              {os.cliente_telefone && (
+              <p className="font-medium">{os.clientes?.nome || "Nome não informado"}</p>
+              {os.clientes?.telefone && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Phone className="w-4 h-4" />
-                  {os.cliente_telefone}
+                  {os.clientes.telefone}
                 </div>
               )}
-              {os.cliente_email && (
+              {os.clientes?.email && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Mail className="w-4 h-4" />
-                  {os.cliente_email}
+                  {os.clientes.email}
                 </div>
               )}
             </div>
@@ -255,29 +258,29 @@ export default function DetalheOS() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {os.equipamento ? (
+            {os.equipamento_os ? (
               <Table>
                 <TableBody>
                   <TableRow>
                     <TableCell className="font-medium">Tipo</TableCell>
-                    <TableCell>{os.equipamento.tipo}</TableCell>
+                    <TableCell>{os.equipamento_os.tipo}</TableCell>
                   </TableRow>
-                  {os.equipamento.marca && (
+                  {os.equipamento_os.marca && (
                     <TableRow>
                       <TableCell className="font-medium">Marca</TableCell>
-                      <TableCell>{os.equipamento.marca}</TableCell>
+                      <TableCell>{os.equipamento_os.marca}</TableCell>
                     </TableRow>
                   )}
-                  {os.equipamento.modelo && (
+                  {os.equipamento_os.modelo && (
                     <TableRow>
                       <TableCell className="font-medium">Modelo</TableCell>
-                      <TableCell>{os.equipamento.modelo}</TableCell>
+                      <TableCell>{os.equipamento_os.modelo}</TableCell>
                     </TableRow>
                   )}
-                  {os.equipamento.numero_serie && (
+                  {os.equipamento_os.numero_serie && (
                     <TableRow>
                       <TableCell className="font-medium">Nº Série</TableCell>
-                      <TableCell>{os.equipamento.numero_serie}</TableCell>
+                      <TableCell>{os.equipamento_os.numero_serie}</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -290,7 +293,7 @@ export default function DetalheOS() {
       </div>
 
       {/* Serviços */}
-      {os.servicos && os.servicos.length > 0 && (
+      {os.servicos_os && os.servicos_os.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -307,7 +310,7 @@ export default function DetalheOS() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {os.servicos.map((servico, index) => (
+                {os.servicos_os.map((servico, index) => (
                   <TableRow key={index}>
                     <TableCell>{servico.nome_servico}</TableCell>
                     <TableCell className="text-right">{formatCurrency(servico.valor_total)}</TableCell>
@@ -324,7 +327,7 @@ export default function DetalheOS() {
       )}
 
       {/* Produtos */}
-      {os.produtos && os.produtos.length > 0 && (
+      {os.produtos_os && os.produtos_os.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -343,7 +346,7 @@ export default function DetalheOS() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {os.produtos.map((produto, index) => (
+                {os.produtos_os.map((produto, index) => (
                   <TableRow key={index}>
                     <TableCell>{produto.nome_produto}</TableCell>
                     <TableCell className="text-center">{produto.quantidade}</TableCell>
@@ -362,7 +365,7 @@ export default function DetalheOS() {
       )}
 
       {/* Despesas */}
-      {os.despesas && os.despesas.length > 0 && (
+      {os.despesas_os && os.despesas_os.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -379,7 +382,7 @@ export default function DetalheOS() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {os.despesas.map((despesa, index) => (
+                {os.despesas_os.map((despesa, index) => (
                   <TableRow key={index}>
                     <TableCell>{despesa.descricao}</TableCell>
                     <TableCell className="text-right">{formatCurrency(despesa.valor)}</TableCell>
@@ -449,7 +452,7 @@ export default function DetalheOS() {
               <p className="text-sm font-medium">Data de Criação</p>
               <p className="text-sm text-muted-foreground">
                 <Calendar className="w-4 h-4 inline mr-1" />
-                {formatDateTime(os.data_criacao || os.data)}
+                {formatDateTime(os.created_at || os.data)}
               </p>
             </div>
           </CardContent>
