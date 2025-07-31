@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { useUserToken } from "@/hooks/use-user-token";
 import { apiClient } from "@/lib/api";
 import { 
   Building2, 
@@ -27,18 +28,39 @@ export default function Configuracoes() {
   const [openAIKeyStatus, setOpenAIKeyStatus] = useState<boolean | null>(null);
   
   const [empresaData, setEmpresaData] = useState({
-    nome_fantasia: "Oficina do Luis",
+    nome_fantasia: "",
     cnpj: "",
     telefone: "",
     endereco: "",
+    logo_empresa: null as string | null,
   });
+  const userToken = useUserToken();
   
   const [apiKey, setApiKey] = useState("");
 
   useEffect(() => {
     // Test existing OpenAI key on load
     testExistingKey();
-  }, []);
+    // Buscar dados da empresa ao carregar token
+    if (userToken) {
+      fetchEmpresaConfig();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userToken]);
+
+  const fetchEmpresaConfig = async () => {
+    if (!userToken) return;
+    const response = await apiClient.getEmpresaConfig(userToken);
+    if (response.ok && response.data) {
+      setEmpresaData({
+        nome_fantasia: response.data.nome_fantasia || "",
+        cnpj: response.data.cnpj || "",
+        telefone: response.data.telefone || "",
+        endereco: response.data.endereco || "",
+        logo_empresa: response.data.logo_empresa || null,
+      });
+    }
+  };
 
   const testExistingKey = async () => {
     try {
@@ -52,16 +74,29 @@ export default function Configuracoes() {
   };
 
   const handleSaveEmpresa = async () => {
+    if (!userToken) {
+      toast({
+        title: "Erro",
+        description: "Usuário não autenticado.",
+        variant: "destructive",
+      });
+      return;
+    }
     setLoading(true);
     try {
-      // Simular salvamento dos dados da empresa
-      // Em produção, implementar endpoint para configurações da empresa
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Configurações salvas",
-        description: "As configurações da empresa foram atualizadas.",
-      });
+      const response = await apiClient.saveEmpresaConfig(empresaData, userToken);
+      if (response.ok) {
+        toast({
+          title: "Configurações salvas",
+          description: "As configurações da empresa foram atualizadas.",
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: response.error?.message || "Erro ao salvar configurações da empresa",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Erro",

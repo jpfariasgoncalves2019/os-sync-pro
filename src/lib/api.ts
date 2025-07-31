@@ -1,4 +1,6 @@
 const API_BASE_URL = '/api';
+const SUPABASE_FUNCTIONS_URL =
+  'https://ppxexzbmaepudhkqfozt.supabase.co/functions/v1';
 
 export interface ApiResponse<T> {
   ok: boolean;
@@ -16,10 +18,12 @@ class ApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    absoluteUrl = false
   ): Promise<ApiResponse<T>> {
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const url = absoluteUrl ? endpoint : `${API_BASE_URL}${endpoint}`;
+      const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
           'Idempotency-Key': this.generateIdempotencyKey(),
@@ -27,7 +31,6 @@ class ApiClient {
         },
         ...options,
       });
-
       return await response.json();
     } catch (error) {
       return {
@@ -38,6 +41,30 @@ class ApiClient {
         },
       };
     }
+  }
+
+  // --- Configuração da Empresa ---
+  async getEmpresaConfig(token: string): Promise<ApiResponse<any>> {
+    return this.request<any>(
+      `${SUPABASE_FUNCTIONS_URL}/api-configuracoes`,
+      {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+      },
+      true
+    );
+  }
+
+  async saveEmpresaConfig(data: any, token: string): Promise<ApiResponse<any>> {
+    return this.request<any>(
+      `${SUPABASE_FUNCTIONS_URL}/api-configuracoes`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: { Authorization: `Bearer ${token}` },
+      },
+      true
+    );
   }
 
   async get<T>(endpoint: string): Promise<ApiResponse<T>> {
