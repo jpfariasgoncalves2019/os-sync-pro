@@ -117,8 +117,24 @@ class ApiClient {
     return this.get(`/api-clientes${queryString ? `?${queryString}` : ''}`);
   }
 
+
   async createClient(data: any): Promise<ApiResponse<any>> {
-    return this.post('/api-clientes', data);
+    // Detecta ambiente de produção Netlify
+    const isProd = typeof window !== 'undefined' && window.location.hostname.endsWith('netlify.app');
+    if (isProd) {
+      // Usa a URL pública da função Supabase
+      return this.request<any>(
+        `${SUPABASE_FUNCTIONS_URL}/api-clientes`,
+        {
+          method: 'POST',
+          body: data ? JSON.stringify(data) : undefined,
+        },
+        true
+      );
+    } else {
+      // Ambiente local/dev: usa proxy /api
+      return this.post('/api-clientes', data);
+    }
   }
 
   async updateClient(id: string, data: any): Promise<ApiResponse<any>> {
