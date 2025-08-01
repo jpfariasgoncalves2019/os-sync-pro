@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@hookform/resolvers/zod/dist/zod";
 import { z } from "zod";
 import { WizardStep } from "@/components/WizardStep";
 import { ItemList, MoneyInput } from "@/components/ItemList";
@@ -833,8 +833,18 @@ export default function NovaOSEdicao() {
               </Button>
 
               <Button
-                onClick={() => saveOS("aberta")}
-                disabled={saving || !watchedData.forma_pagamento || (watchedData.servicos.length === 0 && watchedData.produtos.length === 0)}
+                onClick={() => {
+                  if (!watchedData.forma_pagamento) {
+                    toast({
+                      title: "Validação",
+                      description: "Selecione uma forma de pagamento antes de finalizar.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  saveOS("aberta");
+                }}
+                disabled={saving || (watchedData.servicos.length === 0 && watchedData.produtos.length === 0)}
                 className="flex items-center gap-2"
               >
                 <CheckCircle className="w-4 h-4" />
