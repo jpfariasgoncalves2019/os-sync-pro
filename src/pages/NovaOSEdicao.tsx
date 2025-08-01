@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod/dist/zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { WizardStep } from "@/components/WizardStep";
 import { ItemList, MoneyInput } from "@/components/ItemList";
@@ -821,35 +821,46 @@ export default function NovaOSEdicao() {
             />
 
             {/* Ações finais */}
-            <div className="flex gap-4 pt-6 border-t">
+            <div className="flex justify-between gap-4 pt-6 border-t">
               <Button
                 variant="outline"
-                onClick={() => saveOS("rascunho")}
+                onClick={handlePrevious}
                 disabled={saving}
                 className="flex items-center gap-2"
               >
-                <Save className="w-4 h-4" />
-                {saving ? "Salvando..." : "Salvar como Rascunho"}
+                Anterior
               </Button>
 
-              <Button
-                onClick={() => {
-                  if (!watchedData.forma_pagamento) {
-                    toast({
-                      title: "Validação",
-                      description: "Selecione uma forma de pagamento antes de finalizar.",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  saveOS("aberta");
-                }}
-                disabled={saving || (watchedData.servicos.length === 0 && watchedData.produtos.length === 0)}
-                className="flex items-center gap-2"
-              >
-                <CheckCircle className="w-4 h-4" />
-                {saving ? "Salvando..." : "Salvar e Finalizar"}
-              </Button>
+              <div className="flex gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => saveOS("rascunho")}
+                  disabled={saving}
+                  className="flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  {saving ? "Salvando..." : "Salvar como Rascunho"}
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    if (!watchedData.forma_pagamento) {
+                      toast({
+                        title: "Validação",
+                        description: "Selecione uma forma de pagamento antes de finalizar.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    saveOS("aberta");
+                  }}
+                  disabled={saving || (watchedData.servicos.length === 0 && watchedData.produtos.length === 0)}
+                  className="flex items-center gap-2"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  {saving ? "Salvando..." : "Salvar e Finalizar"}
+                </Button>
+              </div>
             </div>
           </div>
         </WizardStep>
