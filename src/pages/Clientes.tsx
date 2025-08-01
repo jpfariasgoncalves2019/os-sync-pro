@@ -25,8 +25,9 @@ import { Cliente, formatDate } from "@/lib/types";
 export default function Clientes() {
   const { toast } = useToast();
   // Lista completa de clientes do backend
+  // Lista completa de clientes do backend (sempre array)
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  // Lista filtrada para exibição
+  // Lista filtrada para exibição (sempre array)
   const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,16 +45,18 @@ export default function Clientes() {
     setLoading(true);
     try {
       const response = await apiClient.listClients();
-      if (response.ok && response.data) {
-        setClientes(response.data); // Corrigido: backend retorna array direto
-      } else {
-        toast({
-          title: "Erro ao carregar",
-          description: response.error?.message || "Erro desconhecido",
-          variant: "destructive",
-        });
+      // Defensive: garante array mesmo se data vier null, objeto ou array
+      let arr: Cliente[] = [];
+      if (response && response.ok) {
+        if (Array.isArray(response.data)) {
+          arr = response.data;
+        } else if (response.data && Array.isArray(response.data.data)) {
+          arr = response.data.data;
+        } // else mantém arr = []
       }
+      setClientes(arr);
     } catch (error) {
+      setClientes([]);
       toast({
         title: "Erro de conexão",
         description: "Não foi possível carregar os clientes. Tente novamente.",
@@ -71,7 +74,7 @@ export default function Clientes() {
     } else {
       const q = searchQuery.toLowerCase();
       setFilteredClientes(
-        clientes.filter(
+        (Array.isArray(clientes) ? clientes : []).filter(
           (c) =>
             c.nome.toLowerCase().includes(q) ||
             (c.telefone && c.telefone.toLowerCase().includes(q)) ||
@@ -216,7 +219,7 @@ export default function Clientes() {
             </Card>
           ))}
         </div>
-      ) : filteredClientes.length === 0 ? (
+      ) : !Array.isArray(filteredClientes) || filteredClientes.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-center">
             <User className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -234,7 +237,7 @@ export default function Clientes() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredClientes.map((cliente) => (
+          {(Array.isArray(filteredClientes) ? filteredClientes : []).map((cliente) => (
             <Card key={cliente.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
