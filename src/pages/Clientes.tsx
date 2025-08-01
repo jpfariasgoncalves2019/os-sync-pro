@@ -2,6 +2,16 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Search, Edit, Trash2, Phone, Mail, User } from "lucide-react";
 
+// Função utilitária para gerar iniciais do nome
+function getInitials(nome: string) {
+  return nome
+    .split(' ')
+    .filter(Boolean)
+    .map((n) => n[0]?.toUpperCase())
+    .slice(0, 2)
+    .join('');
+}
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +24,10 @@ import { Cliente, formatDate } from "@/lib/types";
 
 export default function Clientes() {
   const { toast } = useToast();
+  // Lista completa de clientes do backend
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  // Lista filtrada para exibição
+  const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showDialog, setShowDialog] = useState(false);
@@ -25,15 +38,14 @@ export default function Clientes() {
     email: "",
   });
 
+
+  // Busca todos os clientes do backend Supabase (sem filtro remoto)
   const loadClientes = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.listClients({
-        query: searchQuery || undefined,
-      });
-
+      const response = await apiClient.listClients();
       if (response.ok && response.data) {
-        setClientes(response.data.items);
+        setClientes(response.data); // Corrigido: backend retorna array direto
       } else {
         toast({
           title: "Erro ao carregar",
@@ -52,9 +64,27 @@ export default function Clientes() {
     }
   };
 
+  // Atualiza a lista filtrada localmente conforme busca
+  useEffect(() => {
+    if (!searchQuery) {
+      setFilteredClientes(clientes);
+    } else {
+      const q = searchQuery.toLowerCase();
+      setFilteredClientes(
+        clientes.filter(
+          (c) =>
+            c.nome.toLowerCase().includes(q) ||
+            (c.telefone && c.telefone.toLowerCase().includes(q)) ||
+            (c.email && c.email.toLowerCase().includes(q))
+        )
+      );
+    }
+  }, [searchQuery, clientes]);
+
+  // Busca todos os clientes apenas no carregamento inicial
   useEffect(() => {
     loadClientes();
-  }, [searchQuery]);
+  }, []);
 
   const handleSave = async () => {
     if (!formData.nome || !formData.telefone) {
@@ -186,7 +216,7 @@ export default function Clientes() {
             </Card>
           ))}
         </div>
-      ) : clientes.length === 0 ? (
+      ) : filteredClientes.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-center">
             <User className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -204,10 +234,16 @@ export default function Clientes() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {clientes.map((cliente) => (
+          {filteredClientes.map((cliente) => (
             <Card key={cliente.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
+                  {/* Avatar de iniciais */}
+                  <div className="flex items-center mr-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-lg">
+                      {getInitials(cliente.nome)}
+                    </div>
+                  </div>
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-lg truncate">{cliente.nome}</CardTitle>
                     <div className="flex items-center text-sm text-muted-foreground mt-1">
@@ -236,7 +272,6 @@ export default function Clientes() {
                   </div>
                 </div>
               </CardHeader>
-              
               <CardContent className="pt-2">
                 <div className="text-xs text-muted-foreground">
                   Criado em {formatDate(cliente.created_at)}
@@ -247,7 +282,10 @@ export default function Clientes() {
         </div>
       )}
 
-      {/* Dialog for New/Edit Cliente */}
+      {/*
+        Dialog para criar/editar cliente.
+        Após salvar, loadClientes() é chamado para garantir atualização da lista real do backend.
+      */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
           <DialogHeader>
