@@ -124,9 +124,19 @@ class ApiClient {
   }
 
   // Métodos específicos para Clientes
+
   async listClients(filters?: any): Promise<ApiResponse<any>> {
     const queryString = filters ? new URLSearchParams(filters).toString() : '';
-    return this.get(`/api-clientes${queryString ? `?${queryString}` : ''}`);
+    const isProd = typeof window !== 'undefined' && window.location.hostname.endsWith('netlify.app');
+    if (isProd) {
+      return this.request<any>(
+        `${SUPABASE_FUNCTIONS_URL}/api-clientes${queryString ? `?${queryString}` : ''}`,
+        { method: 'GET' },
+        true
+      );
+    } else {
+      return this.get(`/api-clientes${queryString ? `?${queryString}` : ''}`);
+    }
   }
 
 
