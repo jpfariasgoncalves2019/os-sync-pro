@@ -242,7 +242,7 @@ export default function NovaOSEdicao() {
   const saveOS = async (status: "rascunho" | "aberta") => {
     setSaving(true);
     try {
-      // Validar se há pelo menos um serviço ou produto
+      // Validação local
       if (watchedData.servicos.length === 0 && watchedData.produtos.length === 0) {
         toast({
           title: "Validação",
@@ -252,8 +252,6 @@ export default function NovaOSEdicao() {
         setSaving(false);
         return;
       }
-
-      // Validar forma de pagamento para status 'aberta'
       if (status === "aberta" && !watchedData.forma_pagamento) {
         toast({
           title: "Validação",
@@ -267,7 +265,26 @@ export default function NovaOSEdicao() {
       const formData = getValues();
       const totals = calculateTotals();
 
-      // First, create or update client
+      // Persistência offline se offline
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        const rascunhos = JSON.parse(localStorage.getItem("os_rascunhos") || "[]");
+        const rascunho = {
+          ...formData,
+          status,
+          sync_status: "pending",
+          data: new Date().toISOString(),
+        };
+        localStorage.setItem("os_rascunhos", JSON.stringify([...rascunhos, rascunho]));
+        toast({
+          title: "Offline",
+          description: "Rascunho salvo localmente. Será sincronizado quando houver conexão.",
+          variant: "default",
+        });
+        setSaving(false);
+        return;
+      }
+
+      // Criação/edição de cliente
       let clienteId = formData.cliente.id;
       if (!clienteId) {
         try {
@@ -276,7 +293,6 @@ export default function NovaOSEdicao() {
             telefone: formData.cliente.telefone,
             email: formData.cliente.email || null,
           });
-          
           if (clientResponse.ok) {
             clienteId = clientResponse.data.id;
           } else {
@@ -288,7 +304,7 @@ export default function NovaOSEdicao() {
         }
       }
 
-      // Garantir snake_case e todos os campos obrigatórios
+      // Montar payload
       const osData = {
         cliente_id: clienteId,
         equipamento: formData.equipamento.tipo ? formData.equipamento : null,
@@ -318,11 +334,10 @@ export default function NovaOSEdicao() {
       if (response.ok) {
         toast({
           title: "Sucesso",
-          description: status === "rascunho" ? "OS salva como rascunho" : "OS criada com sucesso",
+          description: status === "rascunho" ? "Rascunho salvo com sucesso." : "Ordem de serviço salva e finalizada com sucesso.",
         });
         navigate(`/os/${response.data.id}`);
       } else {
-        // Mensagem clara para erro 500 ou validação
         let msg = response.error?.message || "Erro ao salvar OS";
         if (response.error?.details && Array.isArray(response.error.details)) {
           msg += ": " + response.error.details.join(", ");
@@ -333,7 +348,6 @@ export default function NovaOSEdicao() {
         throw new Error(msg);
       }
     } catch (error) {
-      // Log detalhado para debug
       console.error("Erro ao salvar OS:", error);
       toast({
         title: "Erro",

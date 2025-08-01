@@ -80,9 +80,10 @@ serve(async (req) => {
         } else {
           // Create new OS
           const data = await req.json();
+          console.log("[api-os] Payload recebido:", JSON.stringify(data, null, 2));
           const validationErrors = validateOS(data);
-          
           if (validationErrors.length > 0) {
+            console.log("[api-os] Erros de validação:", validationErrors);
             return new Response(
               JSON.stringify({
                 ok: false,
@@ -99,78 +100,98 @@ serve(async (req) => {
             );
           }
 
-          // Generate OS number
-          const osNumero = generateOSNumber();
-          
-          // Insert OS
-          const { data: osData, error: osError } = await supabase
-            .from('ordens_servico')
-            .insert([{
-              ...data,
-              os_numero_humano: osNumero,
-              sync_status: 'synced'
-            }])
-            .select()
-            .single();
+          try {
+            // Generate OS number
+            const osNumero = generateOSNumber();
+            // Insert OS
+            // Remover despesas do payload antes do insert
+            const { despesas, ...osPayload } = data;
+            const { data: osData, error: osError } = await supabase
+              .from('ordens_servico')
+              .insert([{
+                ...osPayload,
+                os_numero_humano: osNumero,
+                sync_status: 'synced'
+              }])
+              .select()
+              .single();
 
-          if (osError) {
-            if (osError.code === '23505') { // Unique constraint violation
-              return new Response(
-                JSON.stringify({
-                  ok: false,
-                  error: {
-                    code: "DUPLICATE_NUMBER",
-                    message: "Número da OS já existe"
+            if (osError) {
+              if (osError.code === '23505') { // Unique constraint violation
+                return new Response(
+                  JSON.stringify({
+                    ok: false,
+                    error: {
+                      code: "DUPLICATE_NUMBER",
+                      message: "Número da OS já existe"
+                    }
+                  }),
+                  {
+                    status: 409,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
                   }
-                }),
-                {
-                  status: 409,
-                  headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-                }
+                );
+              }
+              console.log("[api-os] Erro ao inserir OS:", osError, data);
+              throw osError;
+            }
+
+            // Insert related data
+            if (data.equipamento) {
+              await supabase.from('equipamento_os').insert([{
+                ...data.equipamento,
+                ordem_servico_id: osData.id
+              }]);
+            }
+
+            if (data.servicos?.length > 0) {
+              await supabase.from('servicos_os').insert(
+                data.servicos.map((s: any) => ({
+                  ...s,
+                  ordem_servico_id: osData.id
+                }))
               );
             }
-            throw osError;
-          }
 
-          // Insert related data
-          if (data.equipamento) {
-            await supabase.from('equipamento_os').insert([{
-              ...data.equipamento,
-              ordem_servico_id: osData.id
-            }]);
-          }
+            if (data.produtos?.length > 0) {
+              await supabase.from('produtos_os').insert(
+                data.produtos.map((p: any) => ({
+                  ...p,
+                  ordem_servico_id: osData.id
+                }))
+              );
+            }
 
-          if (data.servicos?.length > 0) {
-            await supabase.from('servicos_os').insert(
-              data.servicos.map((s: any) => ({
-                ...s,
-                ordem_servico_id: osData.id
-              }))
+            if (despesas?.length > 0) {
+              await supabase.from('despesas_os').insert(
+                despesas.map((d: any) => ({
+                  ...d,
+                  ordem_servico_id: osData.id
+                }))
+              );
+            }
+
+            return new Response(
+              JSON.stringify({ ok: true, data: osData }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          } catch (e) {
+            console.log("[api-os] Erro inesperado ao salvar OS:", e, data);
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                error: {
+                  code: "INTERNAL_ERROR",
+                  message: e.message,
+                  stack: e.stack
+                }
+              }),
+              {
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              }
             );
           }
-
-          if (data.produtos?.length > 0) {
-            await supabase.from('produtos_os').insert(
-              data.produtos.map((p: any) => ({
-                ...p,
-                ordem_servico_id: osData.id
-              }))
-            );
-          }
-
-          if (data.despesas?.length > 0) {
-            await supabase.from('despesas_os').insert(
-              data.despesas.map((d: any) => ({
-                ...d,
-                ordem_servico_id: osData.id
-              }))
-            );
-          }
-
-          return new Response(
-            JSON.stringify({ ok: true, data: osData }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
         }
 
       case 'GET':
