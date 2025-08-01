@@ -47,12 +47,8 @@ export default function Clientes() {
       const response = await apiClient.listClients();
       // Defensive: garante array mesmo se data vier null, objeto ou array
       let arr: Cliente[] = [];
-      if (response && response.ok) {
-        if (Array.isArray(response.data)) {
-          arr = response.data;
-        } else if (response.data && Array.isArray(response.data.data)) {
-          arr = response.data.data;
-        } // else mantém arr = []
+      if (response && response.ok && response.data && Array.isArray(response.data.items)) {
+        arr = response.data.items;
       }
       setClientes(arr);
     } catch (error) {
