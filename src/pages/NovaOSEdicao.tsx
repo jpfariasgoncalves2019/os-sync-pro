@@ -242,7 +242,19 @@ export default function NovaOSEdicao() {
   const saveOS = async (status: "rascunho" | "aberta") => {
     setSaving(true);
     try {
-      // Validação local
+      // Validação completa do formulário
+      const isValid = await trigger();
+      if (!isValid) {
+        toast({
+          title: "Validação",
+          description: "Preencha todos os campos obrigatórios",
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
+
+      // Validação de itens
       if (watchedData.servicos.length === 0 && watchedData.produtos.length === 0) {
         toast({
           title: "Validação",
@@ -252,6 +264,7 @@ export default function NovaOSEdicao() {
         setSaving(false);
         return;
       }
+
       if (status === "aberta" && !watchedData.forma_pagamento) {
         toast({
           title: "Validação",
@@ -307,10 +320,15 @@ export default function NovaOSEdicao() {
       // Montar payload
       const osData = {
         cliente_id: clienteId,
-        equipamento: formData.equipamento.tipo ? formData.equipamento : null,
-        servicos: formData.servicos.filter(s => s.nome_servico && s.valor_unitario > 0),
-        produtos: formData.produtos.filter(p => p.nome_produto && p.quantidade > 0 && p.valor_unitario > 0),
-        despesas: formData.despesas.filter(d => d.descricao && d.valor > 0),
+        equipamento: formData.equipamento.tipo ? {
+          tipo: formData.equipamento.tipo,
+          marca: formData.equipamento.marca || null,
+          modelo: formData.equipamento.modelo || null,
+          numero_serie: formData.equipamento.numero_serie || null,
+        } : null,
+        servicos: formData.servicos.filter(s => s.nome_servico?.trim() && s.valor_unitario > 0),
+        produtos: formData.produtos.filter(p => p.nome_produto?.trim() && p.quantidade > 0 && p.valor_unitario > 0),
+        despesas: formData.despesas.filter(d => d.descricao?.trim() && d.valor > 0),
         forma_pagamento: formData.forma_pagamento,
         garantia: formData.garantia || null,
         observacoes: formData.observacoes || null,
@@ -321,8 +339,6 @@ export default function NovaOSEdicao() {
         total_despesas: totals.total_despesas,
         total_geral: totals.total_geral,
       };
-      // Log do payload para debug
-      console.log("Payload OS:", JSON.stringify(osData, null, 2));
 
       let response;
       if (isEditing && id) {
@@ -342,9 +358,22 @@ export default function NovaOSEdicao() {
         if (response.error?.details && Array.isArray(response.error.details)) {
           msg += ": " + response.error.details.join(", ");
         }
-        if (response.error?.code === "INTERNAL_ERROR") {
-          msg = "Erro interno do servidor. Verifique se todos os campos obrigatórios estão preenchidos corretamente. Caso o erro persista, contate o suporte.";
+        
+        // Mensagens de erro mais específicas
+        switch (response.error?.code) {
+          case "VALIDATION_ERROR":
+            msg = "Dados inválidos: " + (response.error.details?.join(", ") || "Verifique os campos preenchidos");
+            break;
+          case "INTERNAL_ERROR":
+            msg = "Erro interno do servidor. Tente novamente em alguns instantes.";
+            break;
+          case "DUPLICATE_CLIENT":
+            msg = "Cliente já existe com este telefone e nome";
+            break;
+          default:
+            msg = response.error?.message || "Erro desconhecido ao salvar OS";
         }
+        
         throw new Error(msg);
       }
     } catch (error) {
