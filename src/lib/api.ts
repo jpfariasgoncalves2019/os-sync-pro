@@ -91,80 +91,101 @@ class ApiClient {
 
   // Métodos específicos para OS
   async listOS(filters?: any): Promise<ApiResponse<any>> {
-    const queryString = filters ? new URLSearchParams(filters).toString() : '';
-    return this.get(`/api-os${queryString ? `?${queryString}` : ''}`);
+    // Filtrar parâmetros undefined
+    const cleanFilters = Object.fromEntries(
+      Object.entries(filters || {}).filter(([_, value]) => value !== undefined && value !== null && value !== '')
+    );
+    const queryString = Object.keys(cleanFilters).length > 0 ? new URLSearchParams(cleanFilters as Record<string, string>).toString() : '';
+    
+    return this.request<any>(
+      `${SUPABASE_FUNCTIONS_URL}/api-os${queryString ? `?${queryString}` : ''}`,
+      { method: 'GET' },
+      true
+    );
   }
 
   async getOS(id: string): Promise<ApiResponse<any>> {
-    return this.get(`/api-os/${id}`);
+    return this.request<any>(
+      `${SUPABASE_FUNCTIONS_URL}/api-os/${id}`,
+      { method: 'GET' },
+      true
+    );
   }
 
   async createOS(data: any): Promise<ApiResponse<any>> {
-    const isProd = typeof window !== 'undefined' && window.location.hostname.endsWith('netlify.app');
-    if (isProd) {
-      return this.request<any>(
-        `${SUPABASE_FUNCTIONS_URL}/api-os`,
-        {
-          method: 'POST',
-          body: data ? JSON.stringify(data) : undefined,
-        },
-        true
-      );
-    } else {
-      return this.post('/api-os', data);
-    }
+    return this.request<any>(
+      `${SUPABASE_FUNCTIONS_URL}/api-os`,
+      {
+        method: 'POST',
+        body: data ? JSON.stringify(data) : undefined,
+      },
+      true
+    );
   }
 
   async updateOS(id: string, data: any): Promise<ApiResponse<any>> {
-    return this.put(`/api-os/${id}`, data);
+    return this.request<any>(
+      `${SUPABASE_FUNCTIONS_URL}/api-os/${id}`,
+      {
+        method: 'PUT',
+        body: data ? JSON.stringify(data) : undefined,
+      },
+      true
+    );
   }
 
   async deleteOS(id: string): Promise<ApiResponse<any>> {
-    return this.delete(`/api-os/${id}`);
+    return this.request<any>(
+      `${SUPABASE_FUNCTIONS_URL}/api-os/${id}`,
+      { method: 'DELETE' },
+      true
+    );
   }
 
   // Métodos específicos para Clientes
 
   async listClients(filters?: any): Promise<ApiResponse<any>> {
-    const queryString = filters ? new URLSearchParams(filters).toString() : '';
-    const isProd = typeof window !== 'undefined' && window.location.hostname.endsWith('netlify.app');
-    if (isProd) {
-      return this.request<any>(
-        `${SUPABASE_FUNCTIONS_URL}/api-clientes${queryString ? `?${queryString}` : ''}`,
-        { method: 'GET' },
-        true
-      );
-    } else {
-      return this.get(`/api-clientes${queryString ? `?${queryString}` : ''}`);
-    }
+    // Filtrar parâmetros undefined
+    const cleanFilters = Object.fromEntries(
+      Object.entries(filters || {}).filter(([_, value]) => value !== undefined && value !== null && value !== '')
+    );
+    const queryString = Object.keys(cleanFilters).length > 0 ? new URLSearchParams(cleanFilters as Record<string, string>).toString() : '';
+    
+    return this.request<any>(
+      `${SUPABASE_FUNCTIONS_URL}/api-clientes${queryString ? `?${queryString}` : ''}`,
+      { method: 'GET' },
+      true
+    );
   }
 
-
   async createClient(data: any): Promise<ApiResponse<any>> {
-    // Detecta ambiente de produção Netlify
-    const isProd = typeof window !== 'undefined' && window.location.hostname.endsWith('netlify.app');
-    if (isProd) {
-      // Usa a URL pública da função Supabase
-      return this.request<any>(
-        `${SUPABASE_FUNCTIONS_URL}/api-clientes`,
-        {
-          method: 'POST',
-          body: data ? JSON.stringify(data) : undefined,
-        },
-        true
-      );
-    } else {
-      // Ambiente local/dev: usa proxy /api
-      return this.post('/api-clientes', data);
-    }
+    return this.request<any>(
+      `${SUPABASE_FUNCTIONS_URL}/api-clientes`,
+      {
+        method: 'POST',
+        body: data ? JSON.stringify(data) : undefined,
+      },
+      true
+    );
   }
 
   async updateClient(id: string, data: any): Promise<ApiResponse<any>> {
-    return this.put(`/api-clientes/${id}`, data);
+    return this.request<any>(
+      `${SUPABASE_FUNCTIONS_URL}/api-clientes/${id}`,
+      {
+        method: 'PUT',
+        body: data ? JSON.stringify(data) : undefined,
+      },
+      true
+    );
   }
 
   async deleteClient(id: string): Promise<ApiResponse<any>> {
-    return this.delete(`/api-clientes/${id}`);
+    return this.request<any>(
+      `${SUPABASE_FUNCTIONS_URL}/api-clientes/${id}`,
+      { method: 'DELETE' },
+      true
+    );
   }
 
   // Métodos para OpenAI

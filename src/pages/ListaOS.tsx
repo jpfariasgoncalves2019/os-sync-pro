@@ -27,7 +27,7 @@ export default function ListaOS() {
     try {
       const response = await apiClient.listOS({
         ...filters,
-        query: searchQuery || undefined,
+        ...(searchQuery && { query: searchQuery }),
         page,
         size: 20,
       });
