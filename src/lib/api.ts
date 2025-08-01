@@ -100,7 +100,19 @@ class ApiClient {
   }
 
   async createOS(data: any): Promise<ApiResponse<any>> {
-    return this.post('/api-os', data);
+    const isProd = typeof window !== 'undefined' && window.location.hostname.endsWith('netlify.app');
+    if (isProd) {
+      return this.request<any>(
+        `${SUPABASE_FUNCTIONS_URL}/api-os`,
+        {
+          method: 'POST',
+          body: data ? JSON.stringify(data) : undefined,
+        },
+        true
+      );
+    } else {
+      return this.post('/api-os', data);
+    }
   }
 
   async updateOS(id: string, data: any): Promise<ApiResponse<any>> {
