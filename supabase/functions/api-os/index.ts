@@ -104,8 +104,8 @@ serve(async (req) => {
             // Generate OS number
             const osNumero = generateOSNumber();
             // Insert OS
-            // Remover despesas do payload antes do insert
-            const { despesas, ...osPayload } = data;
+            // Remover despesas e equipamento do payload antes do insert
+            const { despesas, equipamento, ...osPayload } = data;
             const { data: osData, error: osError } = await supabase
               .from('ordens_servico')
               .insert([{
