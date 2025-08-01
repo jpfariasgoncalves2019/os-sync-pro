@@ -288,6 +288,7 @@ export default function NovaOSEdicao() {
         }
       }
 
+      // Garantir snake_case e todos os campos obrigatórios
       const osData = {
         cliente_id: clienteId,
         equipamento: formData.equipamento.tipo ? formData.equipamento : null,
@@ -299,8 +300,13 @@ export default function NovaOSEdicao() {
         observacoes: formData.observacoes || null,
         data: new Date().toISOString(),
         status,
-        ...totals,
+        total_servicos: totals.total_servicos,
+        total_produtos: totals.total_produtos,
+        total_despesas: totals.total_despesas,
+        total_geral: totals.total_geral,
       };
+      // Log do payload para debug
+      console.log("Payload OS:", JSON.stringify(osData, null, 2));
 
       let response;
       if (isEditing && id) {
@@ -314,12 +320,20 @@ export default function NovaOSEdicao() {
           title: "Sucesso",
           description: status === "rascunho" ? "OS salva como rascunho" : "OS criada com sucesso",
         });
-
         navigate(`/os/${response.data.id}`);
       } else {
-        throw new Error(response.error?.message || "Erro ao salvar OS");
+        // Mensagem clara para erro 500 ou validação
+        let msg = response.error?.message || "Erro ao salvar OS";
+        if (response.error?.details && Array.isArray(response.error.details)) {
+          msg += ": " + response.error.details.join(", ");
+        }
+        if (response.error?.code === "INTERNAL_ERROR") {
+          msg = "Erro interno do servidor. Verifique se todos os campos obrigatórios estão preenchidos corretamente. Caso o erro persista, contate o suporte.";
+        }
+        throw new Error(msg);
       }
     } catch (error) {
+      // Log detalhado para debug
       console.error("Erro ao salvar OS:", error);
       toast({
         title: "Erro",
