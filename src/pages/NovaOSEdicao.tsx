@@ -874,7 +874,7 @@ export default function NovaOSEdicao() {
                 Anterior
               </Button>
 
-              <div className="flex gap-4">
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
                   onClick={() => saveOS("rascunho")}

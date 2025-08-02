@@ -103,18 +103,28 @@ serve(async (req) => {
           try {
             // Generate OS number
             const osNumero = generateOSNumber();
-            // Insert OS
-            // Remover despesas e equipamento do payload antes do insert
-            const { despesas, equipamento, ...osPayload } = data;
-            const { data: osData, error: osError } = await supabase
-              .from('ordens_servico')
-              .insert([{
-                ...osPayload,
-                os_numero_humano: osNumero,
-                sync_status: 'synced'
-              }])
-              .select()
-              .single();
+          // Insert OS
+          // Criar payload apenas com campos que existem na tabela ordens_servico
+          const osPayload = {
+            cliente_id: data.cliente_id,
+            forma_pagamento: data.forma_pagamento,
+            garantia: data.garantia,
+            observacoes: data.observacoes,
+            data: data.data,
+            status: data.status,
+            total_servicos: data.total_servicos,
+            total_produtos: data.total_produtos,
+            total_despesas: data.total_despesas,
+            total_geral: data.total_geral,
+            os_numero_humano: osNumero,
+            sync_status: 'synced'
+          };
+
+          const { data: osData, error: osError } = await supabase
+            .from('ordens_servico')
+            .insert([osPayload])
+            .select()
+            .single();
 
             if (osError) {
               if (osError.code === '23505') { // Unique constraint violation
@@ -162,9 +172,9 @@ serve(async (req) => {
               );
             }
 
-            if (despesas?.length > 0) {
+            if (data.despesas?.length > 0) {
               await supabase.from('despesas_os').insert(
-                despesas.map((d: any) => ({
+                data.despesas.map((d: any) => ({
                   ...d,
                   ordem_servico_id: osData.id
                 }))
@@ -309,9 +319,24 @@ serve(async (req) => {
             );
           }
 
+          // Criar payload apenas com campos que existem na tabela ordens_servico para UPDATE
+          const updatePayload = {
+            cliente_id: data.cliente_id,
+            forma_pagamento: data.forma_pagamento,
+            garantia: data.garantia,
+            observacoes: data.observacoes,
+            data: data.data,
+            status: data.status,
+            total_servicos: data.total_servicos,
+            total_produtos: data.total_produtos,
+            total_despesas: data.total_despesas,
+            total_geral: data.total_geral,
+            sync_status: 'synced'
+          };
+
           const { data: osData, error } = await supabase
             .from('ordens_servico')
-            .update({ ...data, sync_status: 'synced' })
+            .update(updatePayload)
             .eq('id', osId)
             .select()
             .single();
