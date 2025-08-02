@@ -38,187 +38,140 @@ export async function generateOSPDF(
   // Set font
   doc.setFont("helvetica");
 
-  // Header - Logo da Empresa (se houver)
-  if (empresa?.logo_empresa) {
-    try {
-      // Baixa a imagem e converte para base64
-      const response = await fetch(empresa.logo_empresa);
-      const blob = await response.blob();
-      const reader = new FileReader();
-      const base64: string = await new Promise((resolve, reject) => {
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-      // Adiciona a imagem (logo) no topo
-      // Ajusta tamanho máximo (ex: 40mm largura, 20mm altura)
-      const imgProps = doc.getImageProperties(base64);
-      const maxWidth = 40;
-      const maxHeight = 20;
-      let imgWidth = imgProps.width;
-      let imgHeight = imgProps.height;
-      // Redimensiona mantendo proporção
-      if (imgWidth > maxWidth) {
-        imgHeight = (imgHeight * maxWidth) / imgWidth;
-        imgWidth = maxWidth;
-      }
-      if (imgHeight > maxHeight) {
-        imgWidth = (imgWidth * maxHeight) / imgHeight;
-        imgHeight = maxHeight;
-      }
-      // Centraliza horizontalmente
-      const x = margin + (contentWidth - imgWidth) / 2;
-      doc.addImage(base64, "PNG", x, currentY, imgWidth, imgHeight);
-      currentY += imgHeight + 4;
-    } catch (e) {
-      // Se falhar, ignora a logo
-      currentY += 4;
-    }
-  }
-
   // Header - Company Info
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   doc.text(
-    empresa?.nome_fantasia || "Nome da Empresa",
+    empresa?.nome_fantasia || "Oficina do Luis",
     margin,
     currentY
   );
 
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  currentY += 6;
-  doc.text(
-    `CNPJ: ${empresa?.cnpj || "00.000.000/0001-00"}`,
-    margin,
-    currentY
-  );
+  currentY += 5;
+  
+  // Info da empresa no lado esquerdo
+  doc.text(empresa?.cnpj || "37771984000114", margin, currentY);
   currentY += 4;
-  doc.text(
-    `Telefone: ${empresa?.telefone || "(11) 99999-9999"}`,
-    margin,
-    currentY
-  );
+  doc.text(empresa?.endereco || "Estrada do Quilombo numero 1000 - Feitoria", margin, currentY);
   currentY += 4;
-  doc.text(
-    `Endereço: ${empresa?.endereco || "Rua Exemplo, 123 - São Paulo/SP"}`,
-    margin,
-    currentY
-  );
+  doc.text("93054-600 - São Leopoldo/RS", margin, currentY);
 
-  // OS Number and Date
-  currentY += 15;
-  doc.setFontSize(16);
-  doc.setFont("helvetica", "bold");
-  doc.text(`ORDEM DE SERVIÇO: ${os.os_numero_humano}`, margin, currentY);
+  // Info de contato no lado direito
+  const rightMargin = pageWidth - margin;
+  doc.text(`Tel.: ${empresa?.telefone || "51 982279141"}`, rightMargin - 40, currentY - 8, { align: "right" });
+  doc.text("oficinadeluis.stf@gmail.com", rightMargin - 40, currentY - 4, { align: "right" });
+  doc.text("Contato: Luis Felipe", rightMargin - 40, currentY, { align: "right" });
 
-  currentY += 10;
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Data: ${formatDate(os.created_at || os.data)}`, margin, currentY);
-  doc.text(`Status: ${os.status}`, pageWidth - margin - 30, currentY);
-
-  // Client Section
+  // Dados do Cliente
   currentY += 15;
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  doc.text("DADOS DO CLIENTE", margin, currentY);
+  doc.text("Dados do Cliente", margin, currentY);
 
   currentY += 8;
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text(`Nome: ${os.clientes?.nome || "Nome não informado"}`, margin, currentY);
+  doc.text(os.clientes?.nome || "Cliente não informado", margin, currentY);
   
-  if (os.clientes?.telefone) {
-    currentY += 5;
-    doc.text(`Telefone: ${os.clientes.telefone}`, margin, currentY);
-  }
+  // Data no lado direito
+  doc.text(`Data: ${formatDate(os.created_at || os.data)}`, rightMargin - 40, currentY, { align: "right" });
+
+  // OS Number - centralizado e destacado
+  currentY += 15;
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
   
-  if (os.clientes?.email) {
-    currentY += 5;
-    doc.text(`Email: ${os.clientes.email}`, margin, currentY);
-  }
-
-  // Equipment Section
-  if (os.equipamento_os) {
-    currentY += 15;
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("EQUIPAMENTO", margin, currentY);
-
-    const equipmentData = [];
-    if (os.equipamento_os.tipo) equipmentData.push(["Tipo", os.equipamento_os.tipo]);
-    if (os.equipamento_os.marca) equipmentData.push(["Marca", os.equipamento_os.marca]);
-    if (os.equipamento_os.modelo) equipmentData.push(["Modelo", os.equipamento_os.modelo]);
-    if (os.equipamento_os.numero_serie) equipmentData.push(["Nº Série", os.equipamento_os.numero_serie]);
-
-    currentY += 5;
-    doc.autoTable({
-      startY: currentY,
-      head: [["Campo", "Valor"]],
-      body: equipmentData,
-      margin: { left: margin, right: margin },
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [240, 240, 240] },
-      columnStyles: {
-        0: { cellWidth: contentWidth * 0.3 },
-        1: { cellWidth: contentWidth * 0.7 },
-      },
-    });
-
-    currentY = (doc as any).lastAutoTable.finalY + 10;
-  }
-
-  // Services and Products Table
-  const itemsData = [];
+  // Fundo cinza para o número da OS
+  doc.setFillColor(128, 128, 128);
+  doc.rect(margin, currentY - 5, contentWidth, 10, 'F');
   
-  // Add services
+  doc.setTextColor(255, 255, 255);
+  doc.text(`ORÇAMENTO Nº ${os.os_numero_humano}`, pageWidth / 2, currentY, { align: "center" });
+  doc.setTextColor(0, 0, 0);
+
+  // Seções de Serviços e Produtos
+  currentY += 15;
+  
+  // Serviços
   if (os.servicos_os && os.servicos_os.length > 0) {
-    os.servicos_os.forEach((servico) => {
-      itemsData.push([
-        `${servico.nome_servico} (Serviço)`,
-        "1",
-        formatCurrency(servico.valor_unitario),
-        formatCurrency(servico.valor_total),
-      ]);
-    });
-  }
-
-  // Add products
-  if (os.produtos_os && os.produtos_os.length > 0) {
-    os.produtos_os.forEach((produto) => {
-      itemsData.push([
-        `${produto.nome_produto} (Produto)`,
-        produto.quantidade.toString(),
-        formatCurrency(produto.valor_unitario),
-        formatCurrency(produto.valor_total),
-      ]);
-    });
-  }
-
-  if (itemsData.length > 0) {
-    currentY += 5;
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text("ITENS", margin, currentY);
+    doc.text("Serviços", margin, currentY);
+
+    const servicosData = os.servicos_os.map((servico) => [
+      servico.nome_servico,
+      "1",
+      "un",
+      formatCurrency(servico.valor_unitario),
+      formatCurrency(servico.valor_total),
+    ]);
 
     currentY += 5;
     doc.autoTable({
       startY: currentY,
-      head: [["Item", "Qtde", "V. Unit. (R$)", "Total (R$)"]],
-      body: itemsData,
+      head: [["Nome", "Quantidade", "Unidade", "Valor Unitário", "Valor Total"]],
+      body: servicosData,
       margin: { left: margin, right: margin },
       styles: { fontSize: 9 },
-      headStyles: { fillColor: [240, 240, 240] },
+      headStyles: { fillColor: [200, 200, 200] },
       columnStyles: {
-        0: { cellWidth: contentWidth * 0.5 },
+        0: { cellWidth: contentWidth * 0.4 },
         1: { cellWidth: contentWidth * 0.15, halign: "center" },
-        2: { cellWidth: contentWidth * 0.175, halign: "right" },
+        2: { cellWidth: contentWidth * 0.1, halign: "center" },
         3: { cellWidth: contentWidth * 0.175, halign: "right" },
+        4: { cellWidth: contentWidth * 0.175, halign: "right" },
       },
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 5;
+    // Total Serviços
+    currentY = (doc as any).lastAutoTable.finalY + 2;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total Serviços`, pageWidth - margin - 60, currentY, { align: "right" });
+    doc.text(formatCurrency(os.total_servicos || 0), pageWidth - margin, currentY, { align: "right" });
+    currentY += 10;
+  }
+
+  // Produtos
+  if (os.produtos_os && os.produtos_os.length > 0) {
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Produtos", margin, currentY);
+
+    const produtosData = os.produtos_os.map((produto) => [
+      produto.nome_produto,
+      produto.quantidade.toString(),
+      "un",
+      formatCurrency(produto.valor_unitario),
+      formatCurrency(produto.valor_total),
+    ]);
+
+    currentY += 5;
+    doc.autoTable({
+      startY: currentY,
+      head: [["Nome", "Quantidade", "Unidade", "Valor Unitário", "Valor Total"]],
+      body: produtosData,
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [200, 200, 200] },
+      columnStyles: {
+        0: { cellWidth: contentWidth * 0.4 },
+        1: { cellWidth: contentWidth * 0.15, halign: "center" },
+        2: { cellWidth: contentWidth * 0.1, halign: "center" },
+        3: { cellWidth: contentWidth * 0.175, halign: "right" },
+        4: { cellWidth: contentWidth * 0.175, halign: "right" },
+      },
+    });
+
+    // Total Produtos
+    currentY = (doc as any).lastAutoTable.finalY + 2;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total Produtos`, pageWidth - margin - 60, currentY, { align: "right" });
+    doc.text(formatCurrency(os.total_produtos || 0), pageWidth - margin, currentY, { align: "right" });
+    currentY += 10;
   }
 
   // Expenses
@@ -250,78 +203,56 @@ export async function generateOSPDF(
     currentY = (doc as any).lastAutoTable.finalY + 5;
   }
 
-  // Totals
-  currentY += 10;
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.text("TOTAIS", margin, currentY);
-
-  const totalsData = [];
-  if (os.total_servicos && os.total_servicos > 0) {
-    totalsData.push(["Subtotal Serviços:", formatCurrency(os.total_servicos)]);
-  }
-  if (os.total_produtos && os.total_produtos > 0) {
-    totalsData.push(["Subtotal Produtos:", formatCurrency(os.total_produtos)]);
-  }
-  if (os.total_despesas && os.total_despesas > 0) {
-    totalsData.push(["Subtotal Despesas:", formatCurrency(os.total_despesas)]);
-  }
-  totalsData.push(["TOTAL GERAL:", formatCurrency(os.total_geral || 0)]);
-
-  currentY += 5;
-  doc.autoTable({
-    startY: currentY,
-    body: totalsData,
-    margin: { left: margin + contentWidth * 0.5, right: margin },
-    styles: { fontSize: 10 },
-    columnStyles: {
-      0: { cellWidth: contentWidth * 0.25, fontStyle: "bold" },
-      1: { cellWidth: contentWidth * 0.25, halign: "right", fontStyle: "bold" },
-    },
-    theme: "plain",
-  });
-
-  currentY = (doc as any).lastAutoTable.finalY + 15;
-
-  // Payment and Conditions
-  if (os.forma_pagamento || os.garantia || os.observacoes) {
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("CONDIÇÕES", margin, currentY);
-
-    currentY += 8;
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-
-    if (os.forma_pagamento) {
-      doc.text(`Forma de Pagamento: ${os.forma_pagamento}`, margin, currentY);
-      currentY += 5;
-    }
-
-    if (os.garantia) {
-      doc.text(`Garantia: ${os.garantia}`, margin, currentY);
-      currentY += 5;
-    }
-
-    if (os.observacoes) {
-      doc.text("Observações:", margin, currentY);
-      currentY += 5;
-      
-      // Split long text into multiple lines
-      const splitText = doc.splitTextToSize(os.observacoes, contentWidth);
-      doc.text(splitText, margin, currentY);
-      currentY += splitText.length * 5;
-    }
-  }
-
-  // Footer - Signature
-  currentY += 20;
+  // Totais - layout conforme imagem
+  currentY += 15;
+  
+  // Subtotal e Total no lado direito
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text("Assinatura do Cliente: ________________________", margin, currentY);
+  doc.text("Subtotal", pageWidth - margin - 60, currentY, { align: "right" });
+  doc.text(formatCurrency((os.total_servicos || 0) + (os.total_produtos || 0)), pageWidth - margin, currentY, { align: "right" });
   
-  currentY += 10;
-  doc.text(`Data: ___/___/______`, margin, currentY);
+  currentY += 8;
+  doc.setFont("helvetica", "bold");
+  doc.text("Total Orçamento", pageWidth - margin - 60, currentY, { align: "right" });
+  doc.text(formatCurrency(os.total_geral || 0), pageWidth - margin, currentY, { align: "right" });
+
+  currentY += 15;
+
+  // Observações
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text("Observações", margin, currentY);
+
+  currentY += 8;
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+
+  if (os.forma_pagamento) {
+    doc.text(`Condições de Pagamento: ${os.forma_pagamento}`, margin, currentY);
+    currentY += 5;
+  }
+
+  if (os.garantia) {
+    doc.text(`Garantia: ${os.garantia}`, margin, currentY);
+    currentY += 5;
+  }
+
+  if (os.observacoes) {
+    const splitText = doc.splitTextToSize(os.observacoes, contentWidth);
+    doc.text(splitText, margin, currentY);
+    currentY += splitText.length * 5;
+  }
+
+  // Footer - Assinatura
+  currentY += 30;
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  
+  // Centralizar nome da empresa e assinante
+  doc.text(empresa?.nome_fantasia || "Oficina do Luis", pageWidth / 2, currentY, { align: "center" });
+  currentY += 5;
+  doc.text("Luis Felipe", pageWidth / 2, currentY, { align: "center" });
 
   // Convert to blob
   const pdfBlob = doc.output("blob");

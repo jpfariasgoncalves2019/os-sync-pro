@@ -5,25 +5,32 @@ export async function shareViaWhatsApp(
   message?: string
 ): Promise<boolean> {
   try {
-    // Check if Web Share API is available
-    if (navigator.share) {
-      const shareData: ShareData = {};
-
-      if (message) {
-        shareData.text = message;
+    // For file sharing, always download first, then use WhatsApp URL
+    if (file && fileName) {
+      // Download the file
+      const url = URL.createObjectURL(file);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      // Then open WhatsApp if phone number provided
+      if (phoneNumber) {
+        setTimeout(() => {
+          const cleanPhone = phoneNumber.replace(/[^\d]/g, '');
+          const whatsappMessage = encodeURIComponent(message || "Documento anexado. Por favor, envie o arquivo baixado.");
+          const whatsappUrl = `https://wa.me/${cleanPhone}?text=${whatsappMessage}`;
+          window.open(whatsappUrl, "_blank");
+        }, 1000);
       }
-
-      if (file && fileName) {
-        const fileToShare = new File([file], fileName, { type: file.type });
-        shareData.files = [fileToShare];
-      }
-
-      // Try to share with WhatsApp preference
-      await navigator.share(shareData);
+      
       return true;
     }
 
-    // Fallback: Direct WhatsApp URL
+    // For text-only sharing
     if (phoneNumber) {
       const cleanPhone = phoneNumber.replace(/[^\d]/g, '');
       const whatsappMessage = encodeURIComponent(message || "");
