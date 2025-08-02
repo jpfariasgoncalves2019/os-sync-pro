@@ -102,11 +102,47 @@ export default function ListaOS() {
     navigate("/nova-os", { state: { duplicateFrom: order } });
   };
 
-  const handleGeneratePDF = (order: OrdemServico) => {
-    toast({
-      title: "PDF em desenvolvimento",
-      description: "A geração de PDF estará disponível em breve.",
-    });
+  const handleGeneratePDF = async (order: OrdemServico) => {
+    try {
+      // Buscar dados da empresa se necessário (pode ser adaptado se já houver contexto)
+      let empresaConfig = null;
+      if (apiClient.getEmpresaConfig) {
+        const userToken = localStorage.getItem("userToken");
+        if (userToken) {
+          const response = await apiClient.getEmpresaConfig(userToken);
+          if (response.ok && response.data) {
+            empresaConfig = {
+              nome_fantasia: response.data.nome_fantasia || "",
+              cnpj: response.data.cnpj || "",
+              telefone: response.data.telefone || "",
+              endereco: response.data.endereco || "",
+              logo_empresa: response.data.logo_empresa || null,
+            };
+          }
+        }
+      }
+      const { generateOSPDF } = await import("@/lib/pdf-generator");
+      const pdfBlob = await generateOSPDF(order, empresaConfig || undefined);
+      const fileName = `OS-${order.os_numero_humano}.pdf`;
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({
+        title: "PDF Gerado",
+        description: "PDF salvo. Você pode compartilhar quando quiser.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao gerar PDF",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSendWhatsApp = (order: OrdemServico) => {
