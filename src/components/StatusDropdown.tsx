@@ -73,7 +73,7 @@ export function StatusDropdown({ osId, currentStatus, onStatusChange }: StatusDr
           <ChevronDown className="w-4 h-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent align="start" className="bg-background border shadow-lg z-50">
         {statusOptions.map((status) => (
           <DropdownMenuItem
             key={status.value}
