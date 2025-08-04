@@ -104,38 +104,54 @@ export async function generateOSPDF(
   doc.setTextColor(gray[0], gray[1], gray[2]);
   doc.text("Serviços", margin, currentY);
   doc.setTextColor(0, 0, 0);
+  
   const servicosData = (os.servicos_os && os.servicos_os.length > 0)
     ? os.servicos_os.map((servico) => [
         servico.nome_servico,
         "1",
         "un",
-        formatCurrency(servico.valor_unitario),
+        formatCurrency(servico.valor_unitario || servico.valor_total),
         formatCurrency(servico.valor_total),
       ])
     : [["Nenhum serviço cadastrado", "-", "-", "-", "-"]];
+  
   currentY += 5;
   doc.autoTable({
     startY: currentY,
-    head: [["Nome", "Quantidade", "Unidade", "Valor Unitário", "Valor Total"]],
+    head: [["Descrição", "Qtde", "Un", "Valor Unitário", "Valor Total"]],
     body: servicosData,
     margin: { left: margin, right: margin },
-    headStyles: { fillColor: tableHeaderGray, textColor: 80, fontStyle: 'bold' },
+    headStyles: { 
+      fillColor: tableHeaderGray, 
+      textColor: 80, 
+      fontStyle: 'bold',
+      fontSize: 9,
+      cellPadding: 2
+    },
     columnStyles: {
-      0: { cellWidth: contentWidth * 0.4 },
-      1: { cellWidth: contentWidth * 0.15, halign: "center" },
-      2: { cellWidth: contentWidth * 0.1, halign: "center" },
+      0: { cellWidth: contentWidth * 0.45, halign: "left" },
+      1: { cellWidth: contentWidth * 0.12, halign: "center" },
+      2: { cellWidth: contentWidth * 0.08, halign: "center" },
       3: { cellWidth: contentWidth * 0.175, halign: "right" },
       4: { cellWidth: contentWidth * 0.175, halign: "right" },
     },
     theme: 'grid',
-    styles: { fontSize: 9, cellPadding: 1.5, lineColor: [220,220,220], lineWidth: 0.1 },
+    styles: { 
+      fontSize: 9, 
+      cellPadding: 2, 
+      lineColor: [200, 200, 200], 
+      lineWidth: 0.1,
+      overflow: 'linebreak',
+      valign: 'middle'
+    },
   });
-  currentY = (doc as any).lastAutoTable.finalY + 2;
+  
+  currentY = (doc as any).lastAutoTable.finalY + 3;
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text(`Total Serviços`, pageWidth - margin - 60, currentY, { align: "right" });
+  doc.text(`Total Serviços`, pageWidth - margin - 65, currentY, { align: "right" });
   doc.text(formatCurrency(os.total_servicos || 0), pageWidth - margin, currentY, { align: "right" });
-  currentY += 8;
+  currentY += 10;
 
   // Produtos
   doc.setFontSize(11);
@@ -143,6 +159,7 @@ export async function generateOSPDF(
   doc.setTextColor(gray[0], gray[1], gray[2]);
   doc.text("Produtos", margin, currentY);
   doc.setTextColor(0, 0, 0);
+  
   const produtosData = (os.produtos_os && os.produtos_os.length > 0)
     ? os.produtos_os.map((produto) => [
         produto.nome_produto,
@@ -152,29 +169,44 @@ export async function generateOSPDF(
         formatCurrency(produto.valor_total),
       ])
     : [["Nenhum produto cadastrado", "-", "-", "-", "-"]];
+  
   currentY += 5;
   doc.autoTable({
     startY: currentY,
-    head: [["Nome", "Quantidade", "Unidade", "Valor Unitário", "Valor Total"]],
+    head: [["Descrição", "Qtde", "Un", "Valor Unitário", "Valor Total"]],
     body: produtosData,
     margin: { left: margin, right: margin },
-    headStyles: { fillColor: tableHeaderGray, textColor: 80, fontStyle: 'bold' },
+    headStyles: { 
+      fillColor: tableHeaderGray, 
+      textColor: 80, 
+      fontStyle: 'bold',
+      fontSize: 9,
+      cellPadding: 2
+    },
     columnStyles: {
-      0: { cellWidth: contentWidth * 0.4 },
-      1: { cellWidth: contentWidth * 0.15, halign: "center" },
-      2: { cellWidth: contentWidth * 0.1, halign: "center" },
+      0: { cellWidth: contentWidth * 0.45, halign: "left" },
+      1: { cellWidth: contentWidth * 0.12, halign: "center" },
+      2: { cellWidth: contentWidth * 0.08, halign: "center" },
       3: { cellWidth: contentWidth * 0.175, halign: "right" },
       4: { cellWidth: contentWidth * 0.175, halign: "right" },
     },
     theme: 'grid',
-    styles: { fontSize: 9, cellPadding: 1.5, lineColor: [220,220,220], lineWidth: 0.1 },
+    styles: { 
+      fontSize: 9, 
+      cellPadding: 2, 
+      lineColor: [200, 200, 200], 
+      lineWidth: 0.1,
+      overflow: 'linebreak',
+      valign: 'middle'
+    },
   });
-  currentY = (doc as any).lastAutoTable.finalY + 2;
+  
+  currentY = (doc as any).lastAutoTable.finalY + 3;
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text(`Total Produtos`, pageWidth - margin - 60, currentY, { align: "right" });
+  doc.text(`Total Produtos`, pageWidth - margin - 65, currentY, { align: "right" });
   doc.text(formatCurrency(os.total_produtos || 0), pageWidth - margin, currentY, { align: "right" });
-  currentY += 8;
+  currentY += 10;
 
   // Despesas
   doc.setFontSize(11);
@@ -182,26 +214,52 @@ export async function generateOSPDF(
   doc.setTextColor(gray[0], gray[1], gray[2]);
   doc.text("Despesas", margin, currentY);
   doc.setTextColor(0, 0, 0);
+  
   const despesasData = (os.despesas_os && os.despesas_os.length > 0)
     ? os.despesas_os.map((despesa) => [
         despesa.descricao,
         formatCurrency(despesa.valor),
       ])
     : [["Nenhuma despesa cadastrada", "-"]];
+  
   currentY += 5;
   doc.autoTable({
     startY: currentY,
-    head: [["Descrição", "Valor (R$)"]],
+    head: [["Descrição", "Valor"]],
     body: despesasData,
     margin: { left: margin, right: margin },
-    headStyles: { fillColor: [240, 240, 240] },
+    headStyles: { 
+      fillColor: tableHeaderGray, 
+      textColor: 80, 
+      fontStyle: 'bold',
+      fontSize: 9,
+      cellPadding: 2
+    },
     columnStyles: {
-      0: { cellWidth: contentWidth * 0.7 },
+      0: { cellWidth: contentWidth * 0.7, halign: "left" },
       1: { cellWidth: contentWidth * 0.3, halign: "right" },
     },
-    styles: { fontSize: 9 },
+    theme: 'grid',
+    styles: { 
+      fontSize: 9, 
+      cellPadding: 2, 
+      lineColor: [200, 200, 200], 
+      lineWidth: 0.1,
+      overflow: 'linebreak',
+      valign: 'middle'
+    },
   });
-  currentY = (doc as any).lastAutoTable.finalY + 5;
+  
+  currentY = (doc as any).lastAutoTable.finalY + 3;
+  if (os.despesas_os && os.despesas_os.length > 0) {
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total Despesas`, pageWidth - margin - 65, currentY, { align: "right" });
+    doc.text(formatCurrency(os.total_despesas || 0), pageWidth - margin, currentY, { align: "right" });
+    currentY += 10;
+  } else {
+    currentY += 5;
+  }
 
   // Totais - layout conforme imagem
   currentY += 12;
