@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import { OrdemServico, formatCurrency, formatDate } from "./types";
 
 // Extend jsPDF type to include autoTable
@@ -104,6 +104,7 @@ export async function generateOSPDF(
   doc.setTextColor(gray[0], gray[1], gray[2]);
   doc.text("Serviços", margin, currentY);
   doc.setTextColor(0, 0, 0);
+  // Ajustar configurações de autoTable para padronizar layout
   const servicosData = (os.servicos_os && os.servicos_os.length > 0)
     ? os.servicos_os.map((servico) => [
         servico.nome_servico,
@@ -114,12 +115,13 @@ export async function generateOSPDF(
       ])
     : [["Nenhum serviço cadastrado", "-", "-", "-", "-"]];
   currentY += 5;
-  doc.autoTable({
+  // Configuração de autoTable para serviços
+  autoTable(doc, {
     startY: currentY,
     head: [["Nome", "Quantidade", "Unidade", "Valor Unitário", "Valor Total"]],
     body: servicosData,
     margin: { left: margin, right: margin },
-    headStyles: { fillColor: tableHeaderGray, textColor: 80, fontStyle: 'bold' },
+    headStyles: { fillColor: [230, 230, 230], textColor: 80, fontStyle: "bold" },
     columnStyles: {
       0: { cellWidth: contentWidth * 0.4 },
       1: { cellWidth: contentWidth * 0.15, halign: "center" },
@@ -127,8 +129,8 @@ export async function generateOSPDF(
       3: { cellWidth: contentWidth * 0.175, halign: "right" },
       4: { cellWidth: contentWidth * 0.175, halign: "right" },
     },
-    theme: 'grid',
-    styles: { fontSize: 9, cellPadding: 1.5, lineColor: [220,220,220], lineWidth: 0.1 },
+    theme: "grid",
+    styles: { fontSize: 9, cellPadding: 1.5, lineColor: [220, 220, 220], lineWidth: 0.1 },
   });
   currentY = (doc as any).lastAutoTable.finalY + 2;
   doc.setFontSize(10);
@@ -153,12 +155,12 @@ export async function generateOSPDF(
       ])
     : [["Nenhum produto cadastrado", "-", "-", "-", "-"]];
   currentY += 5;
-  doc.autoTable({
+  autoTable(doc, {
     startY: currentY,
     head: [["Nome", "Quantidade", "Unidade", "Valor Unitário", "Valor Total"]],
     body: produtosData,
     margin: { left: margin, right: margin },
-    headStyles: { fillColor: tableHeaderGray, textColor: 80, fontStyle: 'bold' },
+    headStyles: { fillColor: [230, 230, 230], textColor: 80, fontStyle: 'bold' },
     columnStyles: {
       0: { cellWidth: contentWidth * 0.4 },
       1: { cellWidth: contentWidth * 0.15, halign: "center" },
@@ -189,7 +191,7 @@ export async function generateOSPDF(
       ])
     : [["Nenhuma despesa cadastrada", "-"]];
   currentY += 5;
-  doc.autoTable({
+  autoTable(doc, {
     startY: currentY,
     head: [["Descrição", "Valor (R$)"]],
     body: despesasData,
@@ -254,6 +256,11 @@ export async function generateOSPDF(
   doc.text(empresa?.nome_fantasia || "Oficina do Luis", pageWidth / 2, currentY, { align: "center" });
   currentY += 5;
   doc.text("Luis Felipe", pageWidth / 2, currentY, { align: "center" });
+
+    // Verificar se autoTable está disponível
+    if (typeof doc.autoTable !== "function") {
+      console.error("[PDF] autoTable não está disponível no jsPDF.");
+    }
 
     // Convert to blob
     const pdfBlob = doc.output("blob");
