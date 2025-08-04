@@ -37,7 +37,7 @@ export async function generateOSPDF(
     let currentY = margin;
     const gray = [128, 128, 128];
     const lightGray = [240, 240, 240];
-    const tableHeaderGray = [230, 230, 230];
+    const tableHeaderGray: [number, number, number] = [230, 230, 230];
 
     // Set font
     doc.setFont("helvetica");

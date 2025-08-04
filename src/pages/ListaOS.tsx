@@ -12,6 +12,8 @@ import { toast } from "@/hooks/use-toast";
 
 import { apiClient } from "@/lib/api";
 import { OrdemServico, OSFilters, STATUS_CONFIG, SYNC_STATUS_CONFIG, formatCurrency, formatDate } from "@/lib/types";
+import { shareViaWhatsApp } from "@/lib/whatsapp-share";
+import { StatusDropdown } from "@/components/StatusDropdown";
 
 export default function ListaOS() {
   const navigate = useNavigate();
@@ -325,9 +327,15 @@ export default function ListaOS() {
                 </div>
                 
                 <div className="flex justify-between items-center">
-                  <Badge className={STATUS_CONFIG[order.status].color}>
-                    {STATUS_CONFIG[order.status].label}
-                  </Badge>
+                  <StatusDropdown 
+                    osId={order.id}
+                    currentStatus={order.status}
+                    onStatusChange={(newStatus) => {
+                      setOrders(prev => 
+                        prev.map(o => o.id === order.id ? { ...o, status: newStatus as any } : o)
+                      );
+                    }}
+                  />
                   <span className="font-semibold text-lg">{formatCurrency(order.total_geral)}</span>
                 </div>
                 

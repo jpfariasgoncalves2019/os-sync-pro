@@ -11,6 +11,7 @@ import { OrdemServico, formatCurrency, formatDateTime, STATUS_CONFIG } from "@/l
 import { generateOSPDF, EmpresaConfig } from "@/lib/pdf-generator";
 import { useUserToken } from "@/hooks/use-user-token";
 import { shareViaWhatsApp } from "@/lib/whatsapp-share";
+import { StatusDropdown } from "@/components/StatusDropdown";
 import { 
   ArrowLeft, 
   Edit, 
@@ -168,6 +169,12 @@ export default function DetalheOS() {
     }
   };
 
+  const handleStatusChange = (newStatus: string) => {
+    if (os) {
+      setOS({ ...os, status: newStatus as "rascunho" | "aberta" | "em_andamento" | "concluida" | "cancelada" });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -206,9 +213,11 @@ export default function DetalheOS() {
           <div>
             <h1 className="text-2xl font-bold">{os.os_numero_humano}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant="secondary" className={statusConfig.color}>
-                {statusConfig.label}
-              </Badge>
+              <StatusDropdown 
+                osId={os.id}
+                currentStatus={os.status}
+                onStatusChange={handleStatusChange}
+              />
               {os.sync_status && (
                 <Badge variant="outline">
                   {os.sync_status === "synced" ? "Sincronizado" : "Pendente"}
