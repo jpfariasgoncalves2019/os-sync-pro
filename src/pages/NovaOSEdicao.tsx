@@ -309,12 +309,15 @@ export default function NovaOSEdicao() {
 
     const fieldsToValidate = stepValidations[currentStep as keyof typeof stepValidations];
     
-    // Check if at least one service or product exists for step 6
+    // Check if at least one valid service or product exists for step 6
     if (currentStep === 6) {
-      if (watchedData.servicos.length === 0 && watchedData.produtos.length === 0) {
+      const servicosValidos = watchedData.servicos.filter(s => s.nome_servico?.trim() && Number(s.preco_unitario) > 0);
+      const produtosValidos = watchedData.produtos.filter(p => p.nome_produto?.trim() && Number(p.quantidade) > 0 && Number(p.preco_unitario) > 0);
+
+      if (servicosValidos.length === 0 && produtosValidos.length === 0) {
         toast({
           title: "Validação",
-          description: "Adicione pelo menos um serviço ou produto",
+          description: "Adicione pelo menos um serviço ou produto válido (com nome e valores preenchidos)",
           variant: "destructive",
         });
         return;
@@ -349,10 +352,13 @@ export default function NovaOSEdicao() {
       }
 
       // Validação de itens
-      if (watchedData.servicos.length === 0 && watchedData.produtos.length === 0) {
+      const servicosValidos = watchedData.servicos.filter(s => s.nome_servico?.trim() && Number(s.preco_unitario) > 0);
+      const produtosValidos = watchedData.produtos.filter(p => p.nome_produto?.trim() && Number(p.quantidade) > 0 && Number(p.preco_unitario) > 0);
+
+      if (servicosValidos.length === 0 && produtosValidos.length === 0) {
         toast({
           title: "Validação",
-          description: "Adicione pelo menos um serviço ou produto",
+          description: "Adicione pelo menos um serviço ou produto válido (com nome e valores preenchidos)",
           variant: "destructive",
         });
         setSaving(false);
@@ -415,6 +421,41 @@ export default function NovaOSEdicao() {
         }
       }
 
+      // Preparar dados normalizados para envio
+      const servicosNormalizados = formData.servicos
+        .filter(s => s.nome_servico?.trim())
+        .map(s => ({
+          nome_servico: s.nome_servico.trim(),
+          valor_unitario: Number(s.preco_unitario) || 0,
+          valor_total: Number(s.total) || 0,
+          quantidade: 1 // Serviços sempre têm quantidade 1
+        }));
+
+      const produtosNormalizados = formData.produtos
+        .filter(p => p.nome_produto?.trim())
+        .map(p => ({
+          nome_produto: p.nome_produto.trim(),
+          quantidade: Number(p.quantidade) || 0,
+          valor_unitario: Number(p.preco_unitario) || 0,
+          valor_total: Number(p.total) || 0
+        }));
+
+      const despesasNormalizadas = formData.despesas
+        .filter(d => d.descricao?.trim())
+        .map(d => ({
+          descricao: d.descricao.trim(),
+          valor: Number(d.valor) || 0
+        }));
+
+      // Log do payload para debug
+      console.log('Payload de serviços:', JSON.stringify(servicosNormalizados, null, 2));
+      console.log('Payload de produtos:', JSON.stringify(produtosNormalizados, null, 2));
+
+      // Validar se há pelo menos um item válido
+      if (servicosNormalizados.length === 0 && produtosNormalizados.length === 0) {
+        throw new Error("Deve ter pelo menos um serviço ou produto válido");
+      }
+
       // Montar payload
       const osData = {
         cliente_id: clienteId,
@@ -424,9 +465,9 @@ export default function NovaOSEdicao() {
           modelo: formData.equipamento.modelo || null,
           numero_serie: formData.equipamento.numero_serie || null,
         } : null,
-        servicos: formData.servicos.filter(s => s.nome_servico?.trim() && s.valor_unitario > 0),
-        produtos: formData.produtos.filter(p => Boolean(p.nome_produto?.trim()) && p.quantidade > 0 && p.valor_unitario > 0),
-        despesas: formData.despesas.filter(d => d.descricao?.trim() && d.valor > 0),
+        servicos: servicosNormalizados,
+        produtos: produtosNormalizados,
+        despesas: despesasNormalizadas,
         forma_pagamento: formData.forma_pagamento,
         garantia: formData.garantia || null,
         observacoes: formData.observacoes || null,
