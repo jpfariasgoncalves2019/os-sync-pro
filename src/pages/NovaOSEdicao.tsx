@@ -645,7 +645,7 @@ export default function NovaOSEdicao() {
                 render={({ field }) => (
                   <div className="space-y-2">
                     <Label>Tipo *</Label>
-                    <Input {...field} placeholder="Ex: Smartphone, Notebook, TV" />
+                    <Input {...field} placeholder="Ex: Roçadeira, Motosserra, Lavajato" />
                     {errors.equipamento?.tipo && (
                       <p className="text-sm text-destructive">{errors.equipamento.tipo.message}</p>
                     )}
@@ -659,7 +659,7 @@ export default function NovaOSEdicao() {
                 render={({ field }) => (
                   <div className="space-y-2">
                     <Label>Marca</Label>
-                    <Input {...field} placeholder="Ex: Samsung, Apple, LG" />
+                    <Input {...field} placeholder="Ex: Stihl, Husqvarna, Toyama" />
                   </div>
                 )}
               />
@@ -670,7 +670,7 @@ export default function NovaOSEdicao() {
                 render={({ field }) => (
                   <div className="space-y-2">
                     <Label>Modelo</Label>
-                    <Input {...field} placeholder="Ex: Galaxy S21, iPhone 12" />
+                    <Input {...field} placeholder="Ex: FS220, MS661, 236R" />
                   </div>
                 )}
               />
@@ -721,7 +721,7 @@ export default function NovaOSEdicao() {
                     <Input
                       value={servico.nome_servico}
                       onChange={(e) => updateField("nome_servico", e.target.value)}
-                      placeholder="Ex: Troca de tela"
+                      placeholder="Ex: Troca de lâmina"
                     />
                   </div>
                   <MoneyInput
@@ -777,7 +777,7 @@ export default function NovaOSEdicao() {
                     <Input
                       value={produto.nome_produto}
                       onChange={(e) => updateField("nome_produto", e.target.value)}
-                      placeholder="Ex: Tela LCD"
+                      placeholder="Ex: Lâmina 3 pontas"
                     />
                   </div>
                   <div className="space-y-2">
