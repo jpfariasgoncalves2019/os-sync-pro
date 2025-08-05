@@ -300,39 +300,28 @@ serve(async (req) => {
       case 'PUT':
         if (osId) {
           const data = await req.json();
-          const validationErrors = validateOS(data);
+          console.log("[api-os] PUT payload recebido:", JSON.stringify(data, null, 2));
           
-          if (validationErrors.length > 0) {
-            return new Response(
-              JSON.stringify({
-                ok: false,
-                error: {
-                  code: "VALIDATION_ERROR",
-                  message: "Dados inválidos",
-                  details: validationErrors
-                }
-              }),
-              {
-                status: 400,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-              }
-            );
-          }
+          // Para atualizações parciais (como apenas status), não validar campos obrigatórios
+          // Criar payload apenas com campos enviados que existem na tabela
+          const updatePayload: any = {};
+          
+          // Mapear apenas os campos enviados
+          if (data.cliente_id !== undefined) updatePayload.cliente_id = data.cliente_id;
+          if (data.forma_pagamento !== undefined) updatePayload.forma_pagamento = data.forma_pagamento;
+          if (data.garantia !== undefined) updatePayload.garantia = data.garantia;
+          if (data.observacoes !== undefined) updatePayload.observacoes = data.observacoes;
+          if (data.data !== undefined) updatePayload.data = data.data;
+          if (data.status !== undefined) updatePayload.status = data.status;
+          if (data.total_servicos !== undefined) updatePayload.total_servicos = data.total_servicos;
+          if (data.total_produtos !== undefined) updatePayload.total_produtos = data.total_produtos;
+          if (data.total_despesas !== undefined) updatePayload.total_despesas = data.total_despesas;
+          if (data.total_geral !== undefined) updatePayload.total_geral = data.total_geral;
+          
+          // Sempre atualizar o sync_status
+          updatePayload.sync_status = 'synced';
 
-          // Criar payload apenas com campos que existem na tabela ordens_servico para UPDATE
-          const updatePayload = {
-            cliente_id: data.cliente_id,
-            forma_pagamento: data.forma_pagamento,
-            garantia: data.garantia,
-            observacoes: data.observacoes,
-            data: data.data,
-            status: data.status,
-            total_servicos: data.total_servicos,
-            total_produtos: data.total_produtos,
-            total_despesas: data.total_despesas,
-            total_geral: data.total_geral,
-            sync_status: 'synced'
-          };
+          console.log("[api-os] Update payload:", JSON.stringify(updatePayload, null, 2));
 
           const { data: osData, error } = await supabase
             .from('ordens_servico')
@@ -341,7 +330,12 @@ serve(async (req) => {
             .select()
             .single();
 
-          if (error) throw error;
+          if (error) {
+            console.log("[api-os] Erro ao atualizar OS:", error);
+            throw error;
+          }
+
+          console.log("[api-os] OS atualizada com sucesso:", osData);
 
           return new Response(
             JSON.stringify({ ok: true, data: osData }),
