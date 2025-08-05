@@ -50,6 +50,14 @@ npm run dev
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
+## Funcionalidades
+
+### Tema Escuro/Claro
+O aplicativo suporta tema claro e escuro. Para alternar entre os temas:
+1. Clique no ícone sol/lua no canto superior direito
+2. O tema será salvo automaticamente para sua próxima visita
+3. Por padrão, segue a preferência do seu sistema operacional
+
 ## What technologies are used for this project?
 
 This project is built with:

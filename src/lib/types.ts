@@ -63,6 +63,7 @@ export interface ServicoOS {
   nome_servico: string;
   valor_unitario: number;
   valor_total: number;
+  quantidade: number;
   created_at: string;
   updated_at: string;
 }
@@ -74,6 +75,8 @@ export interface ProdutoOS {
   quantidade: number;
   valor_unitario: number;
   valor_total: number;
+  preco_unitario: number;
+  total: number;
   created_at: string;
   updated_at: string;
 }
@@ -108,6 +111,16 @@ export interface ConfiguracaoUsuario {
   updated_at: string;
 }
 
+export interface EmpresaConfig {
+  id: string;
+  nome: string;
+  endereco: string;
+  telefone: string;
+  email: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Form types for wizard
 export interface NovaOSForm {
   // Step 1: Cliente
@@ -116,6 +129,7 @@ export interface NovaOSForm {
   
   // Step 2: Equipamento
   equipamento: {
+    id?: string;
     tipo: string;
     marca?: string;
     modelo?: string;
@@ -124,31 +138,41 @@ export interface NovaOSForm {
   
   // Step 3: Serviços
   servicos: Array<{
+    id?: string;
     nome_servico: string;
-    valor_unitario: number;
-    valor_total: number;
+    quantidade: number;
+    preco_unitario: number;
+    total: number;
   }>;
   
   // Step 4: Produtos
   produtos: Array<{
+    id?: string;
     nome_produto: string;
     quantidade: number;
-    valor_unitario: number;
-    valor_total: number;
+    preco_unitario: number;
+    total: number;
   }>;
   
   // Step 5: Despesas
   despesas: Array<{
+    id?: string;
     descricao: string;
     valor: number;
   }>;
   
   // Step 6: Resumo & Pagamento
-  data: string;
+  data?: string;
   forma_pagamento: string;
   garantia?: string;
   observacoes?: string;
-  status: 'rascunho' | 'aberta' | 'em_andamento' | 'concluida' | 'cancelada';
+  status?: 'rascunho' | 'aberta' | 'em_andamento' | 'concluida' | 'cancelada';
+  
+  // Totais calculados
+  total_servicos?: number;
+  total_produtos?: number;
+  total_despesas?: number;
+  total_geral?: number;
 }
 
 // API pagination
@@ -160,8 +184,11 @@ export interface Pagination {
 }
 
 export interface PaginatedResponse<T> {
-  items: T[];
-  pagination: Pagination;
+  data: T[];
+  items: T[]; // Adicionando a propriedade items
+  total: number;
+  page: number;
+  per_page: number;
 }
 
 // Contact import from phone

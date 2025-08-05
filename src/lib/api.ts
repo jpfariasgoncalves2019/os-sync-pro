@@ -1,3 +1,5 @@
+import { EmpresaConfig, Cliente, NovaOSForm, PaginatedResponse, OrdemServico } from "./types";
+
 const API_BASE_URL = '/api';
 const SUPABASE_FUNCTIONS_URL =
   'https://ppxexzbmaepudhkqfozt.supabase.co/functions/v1';
@@ -44,25 +46,18 @@ class ApiClient {
   }
 
   // --- Configuração da Empresa ---
-  async getEmpresaConfig(token: string): Promise<ApiResponse<any>> {
-    return this.request<any>(
+  async getEmpresaConfig(token: string): Promise<ApiResponse<EmpresaConfig>> {
+    return this.request<EmpresaConfig>(
       `${SUPABASE_FUNCTIONS_URL}/api-configuracoes`,
-      {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token}` },
-      },
+      { method: 'GET', headers: { Authorization: `Bearer ${token}` } },
       true
     );
   }
 
-  async saveEmpresaConfig(data: any, token: string): Promise<ApiResponse<any>> {
-    return this.request<any>(
+  async saveEmpresaConfig(data: EmpresaConfig, token: string): Promise<ApiResponse<EmpresaConfig>> {
+    return this.request<EmpresaConfig>(
       `${SUPABASE_FUNCTIONS_URL}/api-configuracoes`,
-      {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { Authorization: `Bearer ${token}` },
-      },
+      { method: 'POST', body: JSON.stringify(data), headers: { Authorization: `Bearer ${token}` } },
       true
     );
   }
@@ -71,18 +66,20 @@ class ApiClient {
     return this.request<T>(endpoint, { method: 'GET' });
   }
 
-  async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
-    });
+  async post<T>(endpoint: string, data?: T): Promise<ApiResponse<T>> {
+    return this.request<T>(
+      `${SUPABASE_FUNCTIONS_URL}/${endpoint}`,
+      { method: 'POST', body: JSON.stringify(data) },
+      true
+    );
   }
 
-  async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
-    });
+  async put<T>(endpoint: string, data?: T): Promise<ApiResponse<T>> {
+    return this.request<T>(
+      `${SUPABASE_FUNCTIONS_URL}/${endpoint}`,
+      { method: 'PUT', body: JSON.stringify(data) },
+      true
+    );
   }
 
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
@@ -90,52 +87,61 @@ class ApiClient {
   }
 
   // Métodos específicos para OS
-  async listOS(filters?: any): Promise<ApiResponse<any>> {
+  async listOS(filters?: Partial<NovaOSForm>): Promise<ApiResponse<PaginatedResponse<NovaOSForm>>> {
     // Filtrar parâmetros undefined
     const cleanFilters = Object.fromEntries(
       Object.entries(filters || {}).filter(([_, value]) => value !== undefined && value !== null && value !== '')
     );
     const queryString = Object.keys(cleanFilters).length > 0 ? new URLSearchParams(cleanFilters as Record<string, string>).toString() : '';
     
-    return this.request<any>(
+    return this.request<PaginatedResponse<NovaOSForm>>(
       `${SUPABASE_FUNCTIONS_URL}/api-os${queryString ? `?${queryString}` : ''}`,
       { method: 'GET' },
       true
     );
   }
 
-  async getOS(id: string): Promise<ApiResponse<any>> {
-    return this.request<any>(
-      `${SUPABASE_FUNCTIONS_URL}/api-os/${id}`,
-      { method: 'GET' },
-      true
-    );
+  async getOS(id: string): Promise<ApiResponse<OrdemServico>> {
+    try {
+      const response = await this.request<OrdemServico>(
+        `${SUPABASE_FUNCTIONS_URL}/api-os/${id}`,
+        { method: 'GET' },
+        true
+      );
+      if (!response.ok) {
+        console.error(`Erro ao buscar OS com ID ${id}:`, response.error);
+      }
+      return response;
+    } catch (error) {
+      console.error(`Erro de conexão ao buscar OS com ID ${id}:`, error);
+      return {
+        ok: false,
+        error: {
+          code: 'NETWORK_ERROR',
+          message: 'Erro de conexão. Verifique sua internet.',
+        },
+      };
+    }
   }
 
-  async createOS(data: any): Promise<ApiResponse<any>> {
-    return this.request<any>(
+  async createOS(data: NovaOSForm): Promise<ApiResponse<NovaOSForm>> {
+    return this.request<NovaOSForm>(
       `${SUPABASE_FUNCTIONS_URL}/api-os`,
-      {
-        method: 'POST',
-        body: data ? JSON.stringify(data) : undefined,
-      },
+      { method: 'POST', body: JSON.stringify(data) },
       true
     );
   }
 
-  async updateOS(id: string, data: any): Promise<ApiResponse<any>> {
-    return this.request<any>(
+  async updateOS(id: string, data: NovaOSForm): Promise<ApiResponse<NovaOSForm>> {
+    return this.request<NovaOSForm>(
       `${SUPABASE_FUNCTIONS_URL}/api-os/${id}`,
-      {
-        method: 'PUT',
-        body: data ? JSON.stringify(data) : undefined,
-      },
+      { method: 'PUT', body: JSON.stringify(data) },
       true
     );
   }
 
-  async deleteOS(id: string): Promise<ApiResponse<any>> {
-    return this.request<any>(
+  async deleteOS(id: string): Promise<ApiResponse<null>> {
+    return this.request<null>(
       `${SUPABASE_FUNCTIONS_URL}/api-os/${id}`,
       { method: 'DELETE' },
       true
@@ -144,44 +150,38 @@ class ApiClient {
 
   // Métodos específicos para Clientes
 
-  async listClients(filters?: any): Promise<ApiResponse<any>> {
+  async listClients(filters?: Partial<Cliente>): Promise<ApiResponse<PaginatedResponse<Cliente>>> {
     // Filtrar parâmetros undefined
     const cleanFilters = Object.fromEntries(
       Object.entries(filters || {}).filter(([_, value]) => value !== undefined && value !== null && value !== '')
     );
     const queryString = Object.keys(cleanFilters).length > 0 ? new URLSearchParams(cleanFilters as Record<string, string>).toString() : '';
     
-    return this.request<any>(
+    return this.request<PaginatedResponse<Cliente>>(
       `${SUPABASE_FUNCTIONS_URL}/api-clientes${queryString ? `?${queryString}` : ''}`,
       { method: 'GET' },
       true
     );
   }
 
-  async createClient(data: any): Promise<ApiResponse<any>> {
-    return this.request<any>(
+  async createClient(data: Cliente): Promise<ApiResponse<Cliente>> {
+    return this.request<Cliente>(
       `${SUPABASE_FUNCTIONS_URL}/api-clientes`,
-      {
-        method: 'POST',
-        body: data ? JSON.stringify(data) : undefined,
-      },
+      { method: 'POST', body: JSON.stringify(data) },
       true
     );
   }
 
-  async updateClient(id: string, data: any): Promise<ApiResponse<any>> {
-    return this.request<any>(
+  async updateClient(id: string, data: Cliente): Promise<ApiResponse<Cliente>> {
+    return this.request<Cliente>(
       `${SUPABASE_FUNCTIONS_URL}/api-clientes/${id}`,
-      {
-        method: 'PUT',
-        body: data ? JSON.stringify(data) : undefined,
-      },
+      { method: 'PUT', body: JSON.stringify(data) },
       true
     );
   }
 
-  async deleteClient(id: string): Promise<ApiResponse<any>> {
-    return this.request<any>(
+  async deleteClient(id: string): Promise<ApiResponse<null>> {
+    return this.request<null>(
       `${SUPABASE_FUNCTIONS_URL}/api-clientes/${id}`,
       { method: 'DELETE' },
       true
@@ -189,12 +189,20 @@ class ApiClient {
   }
 
   // Métodos para OpenAI
-  async testOpenAIKey(key: string): Promise<ApiResponse<any>> {
-    return this.post('/user-openai-key/test', { key });
+  async testOpenAIKey(key: string): Promise<ApiResponse<{ valid: boolean }>> {
+    return this.request<{ valid: boolean }>(
+      `${SUPABASE_FUNCTIONS_URL}/api-health/openai-key`,
+      { method: 'POST', body: JSON.stringify({ key }) },
+      true
+    );
   }
 
-  async saveOpenAIKey(key: string): Promise<ApiResponse<any>> {
-    return this.post('/user-openai-key', { key });
+  async saveOpenAIKey(key: string): Promise<ApiResponse<null>> {
+    return this.request<null>(
+      `${SUPABASE_FUNCTIONS_URL}/api-health/openai-key`,
+      { method: 'PUT', body: JSON.stringify({ key }) },
+      true
+    );
   }
 }
 
