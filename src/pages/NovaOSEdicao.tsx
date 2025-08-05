@@ -275,7 +275,14 @@ export default function NovaOSEdicao() {
   // Update product total when quantity or unit value changes
   const updateProdutoTotal = (index: number, field: keyof ProdutoOS, value: string | number) => {
     const produtos = getValues("produtos");
-    produtos[index][field] = Number(value);
+    
+    // Trata cada campo de acordo com seu tipo
+    if (field === "nome_produto") {
+      produtos[index][field] = String(value);
+    } else {
+      produtos[index][field] = Number(value);
+    }
+    
     const quantidade = produtos[index].quantidade || 1;
     const preco = produtos[index].preco_unitario || 0;
     produtos[index].total = quantidade * preco;
@@ -418,7 +425,7 @@ export default function NovaOSEdicao() {
           numero_serie: formData.equipamento.numero_serie || null,
         } : null,
         servicos: formData.servicos.filter(s => s.nome_servico?.trim() && s.valor_unitario > 0),
-        produtos: formData.produtos.filter(p => p.nome_produto?.trim() && p.quantidade > 0 && p.valor_unitario > 0),
+        produtos: formData.produtos.filter(p => Boolean(p.nome_produto?.trim()) && p.quantidade > 0 && p.valor_unitario > 0),
         despesas: formData.despesas.filter(d => d.descricao?.trim() && d.valor > 0),
         forma_pagamento: formData.forma_pagamento,
         garantia: formData.garantia || null,
@@ -775,8 +782,12 @@ export default function NovaOSEdicao() {
                   <div className="space-y-2">
                     <Label>Nome do Produto *</Label>
                     <Input
-                      value={produto.nome_produto}
-                      onChange={(e) => updateField("nome_produto", e.target.value)}
+                      type="text"
+                      value={produto.nome_produto || ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        updateField("nome_produto", value);
+                      }}
                       placeholder="Ex: Lâmina 3 pontas"
                     />
                   </div>
