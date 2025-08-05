@@ -67,6 +67,7 @@ export default function NovaOSEdicao() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const isEditing = !!id;
   const isDuplicating = !!location.state?.duplicateFrom;
@@ -126,10 +127,14 @@ export default function NovaOSEdicao() {
         setValue("forma_pagamento", os.forma_pagamento || "");
         setValue("garantia", os.garantia || "");
         setValue("observacoes", os.observacoes || "");
+        setDataLoaded(true);
         return;
       }
 
-      if (!isEditing || !id) return;
+      if (!isEditing || !id) {
+        setDataLoaded(true);
+        return;
+      }
       
       setLoading(true);
       try {
@@ -154,6 +159,7 @@ export default function NovaOSEdicao() {
           setValue("forma_pagamento", os.forma_pagamento || "");
           setValue("garantia", os.garantia || "");
           setValue("observacoes", os.observacoes || "");
+          setDataLoaded(true);
         }
       } catch (error) {
         toast({
@@ -161,6 +167,7 @@ export default function NovaOSEdicao() {
           description: "Erro ao carregar dados da OS",
           variant: "destructive",
         });
+        setDataLoaded(true);
       } finally {
         setLoading(false);
       }
@@ -168,6 +175,19 @@ export default function NovaOSEdicao() {
 
     loadOS();
   }, [id, isEditing, isDuplicating, location.state, setValue, toast]);
+
+  // Set initial step based on editing mode
+  useEffect(() => {
+    if (dataLoaded) {
+      if (isEditing) {
+        // For editing, start at step 6 (Summary & Payment) to show all data
+        setCurrentStep(6);
+      } else {
+        // For new OS, start at step 1 (Client)
+        setCurrentStep(1);
+      }
+    }
+  }, [dataLoaded, isEditing]);
 
   // Calculate totals
   const calculateTotals = () => {
