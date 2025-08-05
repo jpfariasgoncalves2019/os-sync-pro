@@ -15,7 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiClient } from "@/lib/api";
-import { NovaOSForm, Cliente, EquipamentoOS, ServicoOS, ProdutoOS, DespesaOS, formatCurrency } from "@/lib/types";
+import { NovaOSForm, Cliente, EquipamentoOS, ServicoOS, ProdutoOS, DespesaOS, OrdemServico, formatCurrency } from "@/lib/types";
 import { formatPhoneNumber, normalizePhoneNumber, validatePhoneE164 } from "@/lib/format";
 import { Phone, User, Wrench, Package, Receipt, FileText, Save, CheckCircle, X } from "lucide-react";
 
@@ -39,14 +39,15 @@ const novaOSSchema = z.object({
   }),
   servicos: z.array(z.object({
     nome_servico: z.string().min(1, "Nome do serviço é obrigatório"),
-    valor_unitario: z.number().min(0.01, "Valor deve ser maior que zero"),
-    valor_total: z.number().min(0.01, "Valor total deve ser maior que zero"),
+    preco_unitario: z.number().min(0.01, "Valor deve ser maior que zero"),
+    quantidade: z.number().min(1, "Quantidade deve ser maior que zero"),
+    total: z.number().min(0.01, "Total deve ser maior que zero"),
   })),
   produtos: z.array(z.object({
     nome_produto: z.string().min(1, "Nome do produto é obrigatório"),
     quantidade: z.number().min(1, "Quantidade deve ser maior que zero"),
-    valor_unitario: z.number().min(0.01, "Valor unitário deve ser maior que zero"),
-    valor_total: z.number().min(0.01, "Valor total deve ser maior que zero"),
+    preco_unitario: z.number().min(0.01, "Valor unitário deve ser maior que zero"),
+    total: z.number().min(0.01, "Valor total deve ser maior que zero"),
   })),
   despesas: z.array(z.object({
     descricao: z.string().min(1, "Descrição é obrigatória"),
@@ -108,19 +109,17 @@ export default function NovaOSEdicao() {
   useEffect(() => {
     const loadOS = async () => {
       if (isDuplicating && location.state?.duplicateFrom) {
-        const os = location.state.duplicateFrom;
-        setValue("cliente", {
-          id: os.cliente_id,
-          nome: os.cliente_nome || "",
-          telefone: os.cliente_telefone || "",
-          email: os.cliente_email || "",
-        } as any);
-        setValue("equipamento", {
-          tipo: os.equipamento?.tipo || "",
-          marca: os.equipamento?.marca || "",
-          modelo: os.equipamento?.modelo || "",
-          numero_serie: os.equipamento?.numero_serie || "",
+        const os = location.state.duplicateFrom as NovaOSForm;
+        setValue("cliente", os.cliente || {
+          id: "",
+          nome: "",
+          telefone: "",
+          email: "",
+          importado_da_agenda: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         });
+        setValue("equipamento", os.equipamento || { tipo: "", marca: "", modelo: "", numero_serie: "" });
         setValue("servicos", os.servicos || []);
         setValue("produtos", os.produtos || []);
         setValue("despesas", os.despesas || []);
@@ -138,36 +137,110 @@ export default function NovaOSEdicao() {
       
       setLoading(true);
       try {
+        console.log("Carregando OS com ID:", id);
         const response = await apiClient.getOS(id);
-        if (response.ok) {
-          const os = response.data;
-          setValue("cliente", {
-            id: os.cliente_id,
-            nome: os.cliente_nome || "",
-            telefone: os.cliente_telefone || "",
-            email: os.cliente_email || "",
-          } as any);
-          setValue("equipamento", {
-            tipo: os.equipamento?.tipo || "",
-            marca: os.equipamento?.marca || "",
-            modelo: os.equipamento?.modelo || "",
-            numero_serie: os.equipamento?.numero_serie || "",
-          });
-          setValue("servicos", os.servicos || []);
-          setValue("produtos", os.produtos || []);
-          setValue("despesas", os.despesas || []);
-          setValue("forma_pagamento", os.forma_pagamento || "");
-          setValue("garantia", os.garantia || "");
-          setValue("observacoes", os.observacoes || "");
+        console.log("Resposta da API:", response);
+
+        if (response.ok && response.data) {
+          const os: OrdemServico = response.data;
+          console.log("Dados da OS:", os);
+
+          // Cliente
+          if (os.clientes) {
+            const clienteData = {
+              id: os.clientes.id,
+              nome: os.clientes.nome,
+              telefone: os.clientes.telefone,
+              email: os.clientes.email || "",
+              importado_da_agenda: os.clientes.importado_da_agenda,
+              created_at: os.clientes.created_at,
+              updated_at: os.clientes.updated_at,
+            };
+            console.log("Dados do cliente:", clienteData);
+            setValue("cliente", clienteData);
+          }
+
+          // Equipamento
+          if (os.equipamento_os) {
+            const equipamentoData = {
+              id: os.equipamento_os.id,
+              tipo: os.equipamento_os.tipo,
+              marca: os.equipamento_os.marca || "",
+              modelo: os.equipamento_os.modelo || "",
+              numero_serie: os.equipamento_os.numero_serie || "",
+            };
+            console.log("Dados do equipamento:", equipamentoData);
+            setValue("equipamento", equipamentoData);
+          }
+
+          // Serviços
+          const servicosData = (os.servicos_os ?? []).map(s => ({
+            id: s.id,
+            nome_servico: s.nome_servico,
+            quantidade: 1, // Serviços sempre tem quantidade 1
+            preco_unitario: s.valor_unitario,
+            total: s.valor_total
+          }));
+          console.log("Dados dos serviços:", servicosData);
+          setValue("servicos", servicosData);
+
+          // Produtos  
+          const produtosData = (os.produtos_os ?? []).map(p => ({
+            id: p.id,
+            nome_produto: p.nome_produto,
+            quantidade: p.quantidade,
+            preco_unitario: p.valor_unitario,
+            total: p.valor_total
+          }));
+          console.log("Dados dos produtos:", produtosData);
+          setValue("produtos", produtosData);
+
+          // Despesas
+          const despesasData = (os.despesas ?? []).map(d => ({
+            id: d.id,
+            descricao: d.descricao,
+            valor: d.valor || 0
+          }));
+          console.log("Dados das despesas:", despesasData);
+          setValue("despesas", despesasData);
+
+          // Dados gerais
+          console.log("Forma de pagamento:", os.forma_pagamento);
+          setValue("forma_pagamento", os.forma_pagamento ?? "");
+          setValue("garantia", os.garantia);
+          setValue("observacoes", os.observacoes);
+          setValue("status", os.status);
+
+          // Totais
+          const totals = {
+            total_servicos: servicosData.reduce((sum, s) => sum + (s.total || 0), 0),
+            total_produtos: produtosData.reduce((sum, p) => sum + (p.total || 0), 0),
+            total_despesas: despesasData.reduce((sum, d) => sum + (d.valor || 0), 0),
+          };
+          const total_geral = totals.total_servicos + totals.total_produtos + totals.total_despesas;
+
+          setValue("total_servicos", totals.total_servicos);
+          setValue("total_produtos", totals.total_produtos);
+          setValue("total_despesas", totals.total_despesas);
+          setValue("total_geral", total_geral);
+          
+          console.log("Totais calculados:", totals, "Total geral:", total_geral);
           setDataLoaded(true);
+        } else {
+          console.error("Erro ao carregar OS:", response.error);
+          toast({
+            title: "Erro",
+            description: "Erro ao carregar dados da OS",
+            variant: "destructive",
+          });
         }
       } catch (error) {
+        console.error("Erro ao carregar OS:", error);
         toast({
           title: "Erro",
           description: "Erro ao carregar dados da OS",
           variant: "destructive",
         });
-        setDataLoaded(true);
       } finally {
         setLoading(false);
       }
@@ -191,35 +264,29 @@ export default function NovaOSEdicao() {
 
   // Calculate totals
   const calculateTotals = () => {
-    const total_servicos = watchedData.servicos.reduce((sum, s) => sum + s.valor_total, 0);
-    const total_produtos = watchedData.produtos.reduce((sum, p) => sum + p.valor_total, 0);
-    const total_despesas = watchedData.despesas.reduce((sum, d) => sum + d.valor, 0);
+    const total_servicos = watchedData.servicos.reduce((sum, s) => sum + (s.quantidade * s.preco_unitario || 0), 0);
+    const total_produtos = watchedData.produtos.reduce((sum, p) => sum + (p.quantidade * p.preco_unitario || 0), 0);
+    const total_despesas = watchedData.despesas.reduce((sum, d) => sum + (d.valor || 0), 0);
     const total_geral = total_servicos + total_produtos + total_despesas;
 
     return { total_servicos, total_produtos, total_despesas, total_geral };
   };
 
   // Update product total when quantity or unit value changes
-  const updateProdutoTotal = (index: number, field: keyof ProdutoOS, value: any) => {
-    const produtos = [...watchedData.produtos];
-    produtos[index] = { ...produtos[index], [field]: value };
-    
-    if (field === "quantidade" || field === "valor_unitario") {
-      produtos[index].valor_total = produtos[index].quantidade * produtos[index].valor_unitario;
-    }
-    
+  const updateProdutoTotal = (index: number, field: keyof ProdutoOS, value: string | number) => {
+    const produtos = getValues("produtos");
+    produtos[index][field] = Number(value);
+    const quantidade = produtos[index].quantidade || 1;
+    const preco = produtos[index].preco_unitario || 0;
+    produtos[index].total = quantidade * preco;
     setValue("produtos", produtos);
   };
 
-  // Update service total (same as unit value for services)
-  const updateServicoTotal = (index: number, field: keyof ServicoOS, value: any) => {
-    const servicos = [...watchedData.servicos];
-    servicos[index] = { ...servicos[index], [field]: value };
-    
-    if (field === "valor_unitario") {
-      servicos[index].valor_total = value;
-    }
-    
+  // Update service total based on price (quantity is always 1 for services)
+  const updateServicoTotal = (index: number, field: keyof ServicoOS, value: string | number) => {
+    const servicos = getValues("servicos");
+    servicos[index][field] = value;
+    servicos[index].total = servicos[index].preco_unitario || 0;
     setValue("servicos", servicos);
   };
 
@@ -247,7 +314,7 @@ export default function NovaOSEdicao() {
       }
     }
 
-    const isValid = await trigger(fieldsToValidate as any);
+    const isValid = await trigger(fieldsToValidate as Array<keyof NovaOSForm>);
     if (isValid && currentStep < 6) {
       setCurrentStep(currentStep + 1);
     }
@@ -322,9 +389,13 @@ export default function NovaOSEdicao() {
       if (!clienteId) {
         try {
           const clientResponse = await apiClient.createClient({
+            id: "",
             nome: formData.cliente.nome,
             telefone: formData.cliente.telefone,
-            email: formData.cliente.email || null,
+            email: formData.cliente.email || "",
+            importado_da_agenda: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           });
           if (clientResponse.ok) {
             clienteId = clientResponse.data.id;
@@ -471,7 +542,7 @@ export default function NovaOSEdicao() {
                           nome: cliente.nome,
                           telefone: cliente.telefone,
                           email: cliente.email || "",
-                        } as any);
+                        } as ClienteType);
                       }
                     }
                   }}
@@ -637,7 +708,7 @@ export default function NovaOSEdicao() {
 
             <ItemList
               items={watchedData.servicos}
-              onAddItem={() => setValue("servicos", [...watchedData.servicos, { nome_servico: "", valor_unitario: 0, valor_total: 0 }])}
+              onAddItem={() => setValue("servicos", [...watchedData.servicos, { nome_servico: "", preco_unitario: 0, quantidade: 1, total: 0 }])}
               onRemoveItem={(index) => setValue("servicos", watchedData.servicos.filter((_, i) => i !== index))}
               onUpdateItem={updateServicoTotal}
               addButtonText="Adicionar Serviço"
@@ -655,14 +726,17 @@ export default function NovaOSEdicao() {
                   </div>
                   <MoneyInput
                     label="Valor *"
-                    value={servico.valor_unitario}
-                    onChange={(value) => updateField("valor_unitario", value)}
+                    value={servico.preco_unitario}
+                    onChange={(value) => {
+                      updateField("preco_unitario", value);
+                      updateServicoTotal(index, "preco_unitario", value);
+                    }}
                     placeholder="0,00"
                   />
                   <MoneyInput
                     label="Total"
-                    value={servico.valor_total}
-                    onChange={() => {}} // Read-only for services
+                    value={servico.total}
+                    onChange={() => {}} // Read-only
                     disabled
                   />
                 </div>
@@ -690,7 +764,7 @@ export default function NovaOSEdicao() {
 
             <ItemList
               items={watchedData.produtos}
-              onAddItem={() => setValue("produtos", [...watchedData.produtos, { nome_produto: "", quantidade: 1, valor_unitario: 0, valor_total: 0 }])}
+              onAddItem={() => setValue("produtos", [...watchedData.produtos, { nome_produto: "", quantidade: 1, preco_unitario: 0, total: 0 }])}
               onRemoveItem={(index) => setValue("produtos", watchedData.produtos.filter((_, i) => i !== index))}
               onUpdateItem={updateProdutoTotal}
               addButtonText="Adicionar Produto"
@@ -712,18 +786,25 @@ export default function NovaOSEdicao() {
                       type="number"
                       min="1"
                       value={produto.quantidade}
-                      onChange={(e) => updateField("quantidade", parseInt(e.target.value) || 1)}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 1;
+                        updateField("quantidade", value);
+                        updateProdutoTotal(index, "quantidade", value);
+                      }}
                     />
                   </div>
                   <MoneyInput
                     label="Valor Unitário *"
-                    value={produto.valor_unitario}
-                    onChange={(value) => updateField("valor_unitario", value)}
+                    value={produto.preco_unitario}
+                    onChange={(value) => {
+                      updateField("preco_unitario", value);
+                      updateProdutoTotal(index, "preco_unitario", value);
+                    }}
                     placeholder="0,00"
                   />
                   <MoneyInput
                     label="Total"
-                    value={produto.valor_total}
+                    value={produto.total}
                     onChange={() => {}} // Read-only, calculated automatically
                     disabled
                   />

@@ -33,6 +33,11 @@ O arquivo `NovaOSEdicao.tsx` implementa a tela de criação e edição de Ordem 
 - **Validação de forma de pagamento**: O campo é obrigatório para finalizar a OS. O botão "Salvar e Finalizar" está bloqueado e exibe erro se não for preenchido.
 - **Payload para API**: Todos os campos são enviados em snake_case, conforme esperado pelo backend Supabase Functions.
 - **Mensagens de erro**: São detalhadas e orientam o usuário sobre o que precisa ser corrigido.
+- **Campos de valores**: 
+  - Serviços: Usa `preco_unitario` e `total` (quantidade sempre é 1)
+  - Produtos: Usa `preco_unitario`, `quantidade` e `total` (calculado automaticamente)
+  - Despesas: Usa apenas `valor`
+- **Cálculo automático**: Os totais são recalculados sempre que há mudança em quantidade ou preço unitário.
 
 ## Fluxo de Uso
 1. Usuário preenche cada etapa do wizard.
