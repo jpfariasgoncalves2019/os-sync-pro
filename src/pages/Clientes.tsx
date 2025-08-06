@@ -13,6 +13,7 @@ function getInitials(nome: string) {
 }
 
 import { Button } from "@/components/ui/button";
+import { ImportarContatoButton } from "@/components/ImportarContatoButton";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -98,9 +99,23 @@ export default function Clientes() {
     try {
       let response;
       if (editingCliente) {
-        response = await apiClient.updateClient(editingCliente.id, formData);
+        response = await apiClient.updateClient(editingCliente.id, {
+          ...editingCliente,
+          ...formData,
+          importado_da_agenda: editingCliente.importado_da_agenda ?? false,
+          created_at: editingCliente.created_at ?? new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
       } else {
-        response = await apiClient.createClient(formData);
+        response = await apiClient.createClient({
+          id: "",
+          nome: formData.nome,
+          telefone: formData.telefone,
+          email: formData.email,
+          importado_da_agenda: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
       }
 
       if (response.ok) {
@@ -294,6 +309,17 @@ export default function Clientes() {
           </DialogHeader>
           
           <div className="space-y-4">
+            <ImportarContatoButton
+              className="mb-2"
+              onImport={({ nome, telefone, email }) => {
+                setFormData(prev => ({
+                  ...prev,
+                  nome: nome || prev.nome,
+                  telefone: telefone || prev.telefone,
+                  email: email || prev.email,
+                }));
+              }}
+            />
             <div className="space-y-2">
               <Label>Nome *</Label>
               <Input
