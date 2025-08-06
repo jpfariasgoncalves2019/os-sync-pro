@@ -61,6 +61,7 @@ export interface ServicoOS {
   id: string;
   ordem_servico_id: string;
   nome_servico: string;
+  descricao?: string;
   valor_unitario: number;
   valor_total: number;
   quantidade: number;

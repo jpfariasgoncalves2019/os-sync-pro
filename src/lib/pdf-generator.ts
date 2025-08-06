@@ -89,11 +89,47 @@ export async function generateOSPDF(
   currentY += 7;
   doc.text(`Telefone: ${os.clientes?.telefone || "Não informado"}`, margin, currentY);
 
-  // Email
+
+
+
+  // Equipamento
+  currentY += 10;
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(gray[0], gray[1], gray[2]);
+  doc.text("Equipamento", margin, currentY);
+  doc.setTextColor(0, 0, 0);
+
   currentY += 7;
-  doc.text(`Email: ${os.clientes?.email || "Não informado"}`, margin, currentY);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
 
+  // Tabela horizontal para os campos do equipamento
+  const eqHeaders = ["Tipo:", "Marca:", "Modelo:", "Nº Série:"];
+  const eqValues = [
+    os.equipamento_os?.tipo || "Não informado",
+    os.equipamento_os?.marca || "Não informado",
+    os.equipamento_os?.modelo || "Não informado",
+    os.equipamento_os?.numero_serie || "Não informado"
+  ];
+  const colWidths = [40, 40, 45, 55]; // largura de cada coluna
+  let x = margin;
 
+  // Rótulos em negrito
+  doc.setFont("helvetica", "bold");
+  for (let i = 0; i < eqHeaders.length; i++) {
+    doc.text(eqHeaders[i], x, currentY);
+    x += colWidths[i];
+  }
+
+  // Valores
+  x = margin;
+  currentY += 6;
+  doc.setFont("helvetica", "normal");
+  for (let i = 0; i < eqValues.length; i++) {
+    doc.text(eqValues[i], x, currentY);
+    x += colWidths[i];
+  }
 
   // OS Number - centralizado e destacado
   currentY += 12;
@@ -116,8 +152,8 @@ export async function generateOSPDF(
   doc.setTextColor(0, 0, 0);
   const servicosData = (os.servicos_os && os.servicos_os.length > 0)
     ? os.servicos_os.map((servico) => [
-        servico.nome_servico,
-        "1",
+        `${servico.nome_servico}${servico.descricao ? ' - ' + servico.descricao : ''}`,
+        servico.quantidade || 1,
         "un",
         formatCurrency(servico.valor_unitario || servico.valor_total),
         formatCurrency(servico.valor_total),
