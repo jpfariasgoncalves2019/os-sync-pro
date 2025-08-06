@@ -574,6 +574,46 @@ export default function NovaOSEdicao() {
             <div className="flex items-center gap-2 mb-4">
               <User className="w-5 h-5 text-primary" />
               <h3 className="text-lg font-medium">Dados do Cliente</h3>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="ml-2"
+                onClick={async () => {
+                  if ('contacts' in navigator && 'select' in navigator.contacts) {
+                    try {
+                      // Solicita seleção de contato
+                      const props = ['name', 'tel', 'email'];
+                      const opts = { multiple: false };
+                      // @ts-ignore
+                      const contacts = await navigator.contacts.select(props, opts);
+                      if (contacts && contacts.length > 0) {
+                        const contato = contacts[0];
+                        setValue('cliente.nome', contato.name?.[0] || '');
+                        setValue('cliente.telefone', contato.tel?.[0] || '');
+                        setValue('cliente.email', contato.email?.[0] || '');
+                        toast({
+                          title: 'Contato importado',
+                          description: 'Dados preenchidos automaticamente.',
+                        });
+                      }
+                    } catch (err) {
+                      toast({
+                        title: 'Erro ao importar',
+                        description: 'Não foi possível acessar os contatos.',
+                        variant: 'destructive',
+                      });
+                    }
+                  } else {
+                    toast({
+                      title: 'Importação não suportada',
+                      description: 'A importação de contatos só está disponível em navegadores e apps que suportam a API de contatos.',
+                      variant: 'default',
+                    });
+                  }
+                }}
+              >
+                Importar da Agenda
+              </Button>
             </div>
 
             {clientes.length > 0 && (

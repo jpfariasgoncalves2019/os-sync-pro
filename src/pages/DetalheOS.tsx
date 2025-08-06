@@ -11,6 +11,8 @@ import { OrdemServico, formatCurrency, formatDateTime, STATUS_CONFIG } from "@/l
 import { generateOSPDF, EmpresaConfig } from "@/lib/pdf-generator";
 import { useUserToken } from "@/hooks/use-user-token";
 import { shareViaWhatsApp } from "@/lib/whatsapp-share";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { StatusDropdown } from "@/components/StatusDropdown";
 import { 
   ArrowLeft, 
@@ -153,19 +155,37 @@ export default function DetalheOS() {
     }
   };
 
-  const handleWhatsApp = async () => {
-    if (!os) return;
-    
+  // Estado para modal de envio WhatsApp
+  const [whatsModalOpen, setWhatsModalOpen] = useState(false);
+  const [editPhone, setEditPhone] = useState(os?.clientes?.telefone || "");
+  const [sending, setSending] = useState(false);
+
+  const handleWhatsApp = () => {
+    setEditPhone(os?.clientes?.telefone || "");
+    setWhatsModalOpen(true);
+  };
+
+  const confirmWhatsAppSend = async () => {
+    setSending(true);
     try {
-      const clientPhone = os.clientes?.telefone || "";
       const clientName = os.clientes?.nome || "Cliente";
-      await shareViaWhatsApp(null, "", clientPhone, `Olá ${clientName}, sua OS ${os.os_numero_humano} está pronta!`);
+      const result = await shareViaWhatsApp(null, "", editPhone, `Olá ${clientName}, sua OS ${os.os_numero_humano} está pronta!`);
+      if (!result) {
+        toast({
+          title: "Atenção",
+          description: "Selecione o contato desejado no WhatsApp e envie o PDF manualmente. Número inválido ou não cadastrado.",
+          variant: "default",
+        });
+      }
+      setWhatsModalOpen(false);
     } catch (error) {
       toast({
         title: "Erro",
         description: "Erro ao abrir WhatsApp",
         variant: "destructive",
       });
+    } finally {
+      setSending(false);
     }
   };
 
@@ -244,6 +264,35 @@ export default function DetalheOS() {
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
+
+        {/* Modal de envio WhatsApp */}
+        <Dialog open={whatsModalOpen} onOpenChange={setWhatsModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Enviar OS por WhatsApp</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              <label htmlFor="whats-phone">Número do cliente (com DDD e DDI):</label>
+              <Input
+                id="whats-phone"
+                value={editPhone}
+                onChange={e => setEditPhone(e.target.value)}
+                placeholder="Ex: 5511999999999"
+                disabled={sending}
+              />
+              <p className="text-xs text-muted-foreground">Confirme ou edite o número antes do envio. Se o número for inválido, o WhatsApp será aberto para você escolher o contato manualmente.</p>
+              <p className="text-xs text-muted-foreground">Caso não seja possível anexar o PDF automaticamente, baixe o arquivo e envie manualmente pelo WhatsApp.</p>
+            </div>
+            <DialogFooter>
+              <Button onClick={confirmWhatsAppSend} disabled={sending}>
+                {sending ? "Enviando..." : "Enviar"}
+              </Button>
+              <Button variant="outline" onClick={() => setWhatsModalOpen(false)} disabled={sending}>
+                Cancelar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

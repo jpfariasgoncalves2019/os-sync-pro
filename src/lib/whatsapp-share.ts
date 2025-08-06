@@ -5,9 +5,12 @@ export async function shareViaWhatsApp(
   message?: string
 ): Promise<boolean> {
   try {
-    // For file sharing, always download first, then use WhatsApp URL
+    // Detect platform
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const whatsappBaseUrl = isMobile ? "whatsapp://send" : "https://web.whatsapp.com/send";
+
+    // Download file if provided
     if (file && fileName) {
-      // Download the file
       const url = URL.createObjectURL(file);
       const a = document.createElement('a');
       a.href = url;
@@ -16,33 +19,29 @@ export async function shareViaWhatsApp(
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
-      // Then open WhatsApp if phone number provided
-      if (phoneNumber) {
-        setTimeout(() => {
-          const cleanPhone = phoneNumber.replace(/[^\d]/g, '');
-          const whatsappMessage = encodeURIComponent(message || "Documento anexado. Por favor, envie o arquivo baixado.");
-          const whatsappUrl = `https://wa.me/${cleanPhone}?text=${whatsappMessage}`;
-          window.open(whatsappUrl, "_blank");
-        }, 1000);
-      }
-      
-      return true;
     }
 
-    // For text-only sharing
-    if (phoneNumber) {
-      const cleanPhone = phoneNumber.replace(/[^\d]/g, '');
-      const whatsappMessage = encodeURIComponent(message || "");
-      const whatsappUrl = `https://wa.me/${cleanPhone}?text=${whatsappMessage}`;
-      
-      window.open(whatsappUrl, "_blank");
-      return true;
+    // Validar e formatar número
+    let cleanPhone = phoneNumber ? phoneNumber.replace(/[^\d]/g, '') : '';
+    if (cleanPhone.length < 10 || cleanPhone.length > 13) {
+      // Número inválido ou não informado: abrir WhatsApp sem número
+      window.open(whatsappBaseUrl, "_blank");
+      alert("Selecione o contato desejado e envie o PDF manualmente. Número de telefone inválido ou não cadastrado no WhatsApp.");
+      return false;
     }
 
-    return false;
+    // Mensagem padrão
+    const whatsappMessage = encodeURIComponent(message || "Documento anexado. Por favor, envie o arquivo baixado.");
+    // Monta URL
+    const whatsappUrl = isMobile
+      ? `whatsapp://send?phone=${cleanPhone}&text=${whatsappMessage}`
+      : `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${whatsappMessage}`;
+
+    window.open(whatsappUrl, "_blank");
+    return true;
   } catch (error) {
-    console.error("Error sharing via WhatsApp:", error);
+    console.error("Erro ao compartilhar via WhatsApp:", error);
+    alert("Erro ao abrir WhatsApp. Tente novamente ou envie manualmente.");
     return false;
   }
 }
