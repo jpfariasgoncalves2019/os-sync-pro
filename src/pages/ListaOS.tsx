@@ -275,7 +275,11 @@ export default function ListaOS() {
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle className="text-lg">{order.os_numero_humano}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{order.clientes?.nome || "Cliente não encontrado"}</p>
+                    <div className="text-sm text-muted-foreground">
+                      <div><strong>Nome:</strong> {order.clientes?.nome || "Cliente não encontrado"}</div>
+                      <div><strong>Telefone:</strong> {order.clientes?.telefone || "Não informado"}</div>
+                      <div><strong>Email:</strong> {order.clientes?.email || "Não informado"}</div>
+                    </div>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

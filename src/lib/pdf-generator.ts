@@ -79,9 +79,19 @@ export async function generateOSPDF(
   currentY += 7;
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
+
+  // Nome
   doc.text(os.clientes?.nome || "Cliente não informado", margin, currentY);
   // Data no lado direito
   doc.text(`Data: ${formatDate(os.created_at || os.data)}`, rightMargin, currentY, { align: "right" });
+
+  // Telefone
+  currentY += 7;
+  doc.text(`Telefone: ${os.clientes?.telefone || "Não informado"}`, margin, currentY);
+
+  // Email
+  currentY += 7;
+  doc.text(`Email: ${os.clientes?.email || "Não informado"}`, margin, currentY);
 
 
 

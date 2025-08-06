@@ -1,11 +1,29 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.53.0';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://progeseta.netlify.app',
-  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, idempotency-key',
-};
+
+// Lista de origens permitidas
+const allowedOrigins = [
+  'https://progestec.netlify.app',
+  'http://localhost:8080',
+  'http://127.0.0.1:8080'
+];
+
+// Função para obter o origin do request
+function getOrigin(req: Request) {
+  return req.headers.get('origin') || '';
+}
+
+// Função para montar os headers CORS dinamicamente
+function getCorsHeaders(origin: string) {
+  const isAllowed = allowedOrigins.includes(origin);
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[0],
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, idempotency-key',
+    'Vary': 'Origin'
+  };
+}
 
 // Initialize Supabase client
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -53,7 +71,11 @@ function validateClient(data: any) {
   return errors;
 }
 
+
 serve(async (req) => {
+  const origin = getOrigin(req);
+  const corsHeaders = getCorsHeaders(origin);
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -68,10 +90,10 @@ serve(async (req) => {
     const clienteId = pathParts[pathParts.length - 1];
 
     switch (req.method) {
-      case 'POST':
+      case 'POST': {
         const data = await req.json();
         const validationErrors = validateClient(data);
-        
+
         if (validationErrors.length > 0) {
           return new Response(
             JSON.stringify({
@@ -91,7 +113,7 @@ serve(async (req) => {
 
         // Normalize phone
         const normalizedPhone = normalizePhone(data.telefone);
-        
+
         // Check for duplicates by phone + name
         const { data: existingClients } = await supabase
           .from('clientes')
@@ -132,8 +154,9 @@ serve(async (req) => {
           JSON.stringify({ ok: true, data: clientData }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+      }
 
-      case 'GET':
+      case 'GET': {
         if (clienteId && clienteId !== 'api-clientes') {
           // Get single client
           const { data: client, error } = await supabase
@@ -197,12 +220,13 @@ serve(async (req) => {
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
+      }
 
-      case 'PUT':
+      case 'PUT': {
         if (clienteId) {
           const data = await req.json();
           const validationErrors = validateClient(data);
-          
+
           if (validationErrors.length > 0) {
             return new Response(
               JSON.stringify({
@@ -221,7 +245,7 @@ serve(async (req) => {
           }
 
           const normalizedPhone = normalizePhone(data.telefone);
-          
+
           const { data: clientData, error } = await supabase
             .from('clientes')
             .update({
@@ -242,8 +266,9 @@ serve(async (req) => {
           );
         }
         break;
+      }
 
-      case 'DELETE':
+      case 'DELETE': {
         if (clienteId) {
           const { error } = await supabase
             .from('clientes')
@@ -258,6 +283,7 @@ serve(async (req) => {
           );
         }
         break;
+      }
 
       default:
         return new Response(

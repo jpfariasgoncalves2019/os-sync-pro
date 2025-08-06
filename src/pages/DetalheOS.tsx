@@ -306,19 +306,17 @@ export default function DetalheOS() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <p className="font-medium">{os.clientes?.nome || "Nome não informado"}</p>
-              {os.clientes?.telefone && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="font-medium">{os.clientes?.nome || "Nome não informado"}</div>
+              <div className="text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4" />
-                  {os.clientes.telefone}
+                  <strong>Telefone:</strong> {os.clientes?.telefone || "Não informado"}
                 </div>
-              )}
-              {os.clientes?.email && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4" />
-                  {os.clientes.email}
+                  <strong>Email:</strong> {os.clientes?.email || "Não informado"}
                 </div>
-              )}
+              </div>
             </div>
           </CardContent>
         </Card>
