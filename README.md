@@ -1,8 +1,9 @@
-# Welcome to your Lovable project
+# 🛠️ Ordem de Serviço - Sistema de Gerenciamento
 
-## Project info
+Sistema web para gerenciamento de ordens de serviço focado em oficinas de equipamentos (roçadeiras, motosserras, etc).
 
-**URL**: https://lovable.dev/projects/6991a5e3-e03e-4c8b-b0c2-b052f6b7ee3a
+![Status](https://img.shields.io/badge/status-em%20desenvolvimento-brightgreen)
+![Licença](https://img.shields.io/badge/licença-MIT-blue)
 
 ## How can I edit this code?
 
